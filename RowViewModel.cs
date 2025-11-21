@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
@@ -11,21 +12,39 @@ public class RowViewModel : BaseViewModel
     private int _rowIndex;
     private int _rowOffset = 0;
     private int _rowHeight = 25;
+    private RowViewModel _topParent;
 
     private bool _openChildren = false;
+    private int _depthChildren = 0;
 
     private IList<RowViewModel> _topRows;
 
     public int GetTopRowsCount() => _topRows.Count;
+
+    public RowViewModel TopParent
+    {
+        get => _topParent;
+        set
+        {
+            if (_topParent != null)
+                throw new StackOverflowException("Родитель уже задан!");
+        }
+    }
+
+    public int DepthChildren 
+    { 
+        get => _depthChildren; 
+        private set => _depthChildren = value; 
+    }
 
     public RowViewModel Parent { get; private set; }
 
     public int GetIndexRowItem()
     {
         var index = 0;
-        if(GetIndex(_topRows, this, ref index))
+        if (GetIndex(_topRows, this, ref index))
         {
-            return index; 
+            return index;
         }
         return -1;
     }
@@ -34,10 +53,10 @@ public class RowViewModel : BaseViewModel
 
     public RowViewModel? GetNextParentItem()
     {
-        if(Parent != null)
+        if (Parent != null)
         {
             if (Parent.Children.Last() == this) return this;
-            for(var i =0; i < Parent.Children.Count; i++)
+            for (var i = 0; i < Parent.Children.Count; i++)
             {
                 var child = Parent.Children[i];
                 if (child == this) return child;
@@ -45,7 +64,7 @@ public class RowViewModel : BaseViewModel
         }
         else
         {
-            if(_topRows.Last() == this) return this;
+            if (_topRows.Last() == this) return this;
             for (var i = 0; i < _topRows.Count; i++)
             {
                 var child = _topRows[i];
@@ -53,7 +72,7 @@ public class RowViewModel : BaseViewModel
             }
         }
 
-            return null;
+        return null;
     }
 
     public ImageSource Image { get; set; }
@@ -99,7 +118,11 @@ public class RowViewModel : BaseViewModel
     {
         var row = new RowViewModel(_rowCount, _topRows, contents, this)
         {
-            RowOffset = _rowOffset,
+            RowOffset = _rowOffset + RowOffsetImmutable,
+            TopParent = TopParent,
+            DepthChildren = DepthChildren+1,
+            Image = new BitmapImage(
+            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png")),
         };
         Children.Add(row);
         IsOpenChildren = true;

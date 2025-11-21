@@ -13,7 +13,8 @@ public partial class RadTreeViewControl
 
     public RadTreeViewModel ViewModel { get; }
 
-    private Dictionary<RowViewModel, Grid> Elements = [];
+    private readonly Dictionary<RowViewModel, Grid> Elements = new();
+    private readonly Dictionary<RowViewModel, Border> VerticalLines = new();
 
     public RadTreeViewControl(RadTreeViewModel model)
     {
@@ -150,20 +151,7 @@ public partial class RadTreeViewControl
 
         if (row.RowContents.Count > 0)
         {
-            if (row.Parent == null)
-            {
-                AddGrid(row, index);
-            }
-            else
-            {
-                var elements = Elements.ToDictionary();
-                foreach (var item in elements)
-                {
-                    if (row.Parent != item.Key) continue;
-                    AddGrid(row, index, item.Value);
-                    break;
-                }
-            }
+            AddGrid(row, index);
         }
 
         for (var i = 1; i < row.RowContents.Count; i++)
@@ -190,7 +178,6 @@ public partial class RadTreeViewControl
             Grid.SetRow(newBorder, index + 1);
         }
     }
-
 
     private void AddGrid(RowViewModel row, int index, Grid? parentGrid = null)
     {
@@ -232,7 +219,7 @@ public partial class RadTreeViewControl
             BorderBrush = Brushes.LightGray,
             BorderThickness = new Thickness(1),
             Child = textButton,
-            Margin = new Thickness(row.RowOffset - rowOffset, 0, -row.RowOffset + rowOffset, 0),
+            Margin = new Thickness(row.RowOffset - RowViewModel.RowOffsetImmutable / 3, 0, -row.RowOffset + RowViewModel.RowOffsetImmutable / 3, 0),
             Background = Brushes.Azure,
             Cursor = Cursors.Hand
         };
@@ -240,7 +227,7 @@ public partial class RadTreeViewControl
 
         var lineBorder = new Border
         {
-            Margin = new Thickness(row.RowOffset - rowOffset / 2, 0, -row.RowOffset + rowOffset, 0),
+            Margin = new Thickness(row.RowOffset - rowOffset / 4, 0, -row.RowOffset + rowOffset, 0),
             Width = 20 + rowOffset,
             BorderBrush = Brushes.LightGray,
             BorderThickness = new Thickness(0, 0.5, 0, 0),
@@ -250,50 +237,42 @@ public partial class RadTreeViewControl
 
         var lineBorderDown = new Border
         {
-            Margin = new Thickness(row.RowOffset - rowOffset / 2, 0, -row.RowOffset + rowOffset, 0),
+            Margin = new Thickness(row.RowOffset + RowViewModel.RowOffsetImmutable / 4, 0, -row.RowOffset - RowViewModel.RowOffsetImmutable / 4, 0),
             BorderBrush = Brushes.LightGray,
             BorderThickness = new Thickness(1, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Bottom
+            Tag = row,
+            VerticalAlignment = VerticalAlignment.Top,
         };
 
         currentGrid.Children.Add(borderButton);
         currentGrid.Children.Add(lineBorder);
-        currentGrid.Children.Add(lineBorderDown);
         Grid.SetColumn(lineBorder, 0);
         Grid.SetColumn(borderButton, 0);
-        Grid.SetColumn(lineBorderDown, 0);
+
+        Elements[row] = currentGrid;
 
         if (row.Parent != null)
         {
+            PART_RootGrid.Children.Add(lineBorderDown);
+
+            if (index == -1)
+            {
+                throw new IndexOutOfRangeException("Не найден индекс элемента!");
+            }
+
+            Grid.SetRow(lineBorderDown, index + 1);
+            Grid.SetColumn(lineBorderDown, 0);
+
+            VerticalLines[row] = lineBorderDown;
+
             if (!row.Parent.IsOpenChildren)
             {
                 lineBorderDown.Visibility = Visibility.Collapsed;
             }
-            var count = row.Parent.Children.Count;
 
-            if (count == 1)
+            if (row.DepthChildren > 0)
             {
-
-                lineBorderDown.Height = 25 / 2;
-                row.Parent.FirstCompleted = true;
-            }
-            else
-            {
-                if (!row.Parent.FirstCompleted)
-                {
-                    lineBorderDown.Height = 25 / 2;
-                    var margin = lineBorderDown.Margin;
-
-                    lineBorderDown.Margin = new Thickness(margin.Left, margin.Top - lineBorderDown.Height, margin.Right, margin.Bottom + lineBorderDown.Height);
-                    row.Parent.FirstCompleted = true;
-                }
-                else
-                {
-                    lineBorderDown.Height = 25;
-                    var margin = lineBorderDown.Margin;
-
-                    lineBorderDown.Margin = new Thickness(margin.Left, margin.Top - lineBorderDown.Height / 2, margin.Right, margin.Bottom + lineBorderDown.Height / 2);
-                }
+                ChangeHeightLine(row);
             }
         }
         else
@@ -330,31 +309,75 @@ public partial class RadTreeViewControl
             Grid.SetColumn(newBorder, 2);
         }
 
-        if (parentGrid != null)
+        PART_RootGrid.Children.Add(currentGrid);
+        Grid.SetColumn(currentGrid, 0);
+        if (index == -1) throw new IndexOutOfRangeException("Не найден индекс элемента!");
+        Grid.SetRow(currentGrid, index + 1);
+    }
+
+    private void ChangeHeightLine(RowViewModel item)
+    {
+        var current = item;
+
+        while (current != null)
         {
-            parentGrid.RowDefinitions.Add(new RowDefinition()
+            UpdateHeightLine(current);
+            current = current.Parent;
+        }
+    }
+
+    private int CountVisibleRows(RowViewModel item)
+    {
+        int count = 1;
+
+        if (item.IsOpenChildren)
+        {
+            foreach (var c in item.Children)
+                count += CountVisibleRows(c);
+        }
+
+        return count;
+    }
+
+    private void UpdateHeightLine(RowViewModel item)
+    {
+        if (!VerticalLines.TryGetValue(item, out var border))
+            return;
+
+        var index = item.GetIndexRowItem();
+        if (index == -1) return;
+
+        var rows = 0;
+
+        if (item.Parent.Children.Count > 1)
+        {
+            if(item.Parent.Children.First() == item)
             {
-                Height = new GridLength(row.RowHeight, GridUnitType.Pixel)
-            });
-
-            var newRowIndex = parentGrid.RowDefinitions.Count - 1;
-            var border = new Border();
-            parentGrid.Children.Add(currentGrid);
-
-            Grid.SetRowSpan(parentGrid, parentGrid.RowDefinitions.Count);
-
-            Grid.SetColumn(currentGrid, 2);
-            Grid.SetRow(currentGrid, newRowIndex);
-            Grid.SetColumnSpan(currentGrid, Math.Max(1, parentGrid.ColumnDefinitions.Count - 2));
+                var indexOf = item.Parent.Children.IndexOf(item);
+                if (indexOf != -1)
+                {
+                    rows = CountVisibleRows(item) + item.Parent.Children.Count - 1 - indexOf;
+                    if (rows <= 0) rows = 1;
+                }
+            }
+            else
+            {
+                rows = 1;
+            }
         }
         else
         {
-            PART_RootGrid.Children.Add(currentGrid);
-            Grid.SetColumn(currentGrid, 0);
-            if (index == -1) throw new IndexOutOfRangeException("Не найден индекс элемента!");
-            Grid.SetRow(currentGrid, index + 1);
+            rows = 1;
         }
 
-        Elements.Add(row, currentGrid);
+        Grid.SetRow(border, index + 1);
+
+        Grid.SetRowSpan(border, rows);
+
+        border.Height = Math.Max(1, rows * 25 - RowViewModel.RowOffsetImmutable / 2);
+        if (item.Parent != null && !item.Parent.IsOpenChildren)
+            border.Visibility = Visibility.Collapsed;
+        else
+            border.Visibility = Visibility.Visible;
     }
 }

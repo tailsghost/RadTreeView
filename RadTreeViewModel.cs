@@ -23,9 +23,10 @@ public class RadTreeViewModel : BaseViewModel
         var row = new RowViewModel(Columns.Count, Rows, contents)
         {
             Image = new BitmapImage(
-            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png"))
+            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png")),
         };
         Rows.Add(row);
+        row.TopParent = row;
         OnPropertyChanged(nameof(RowsCount));
 
         return row;
@@ -49,7 +50,6 @@ public class RadTreeViewModel : BaseViewModel
         if (columnNames.Count ==0) return;
         Init(columnNames);
     }
-
 
     private void Init(List<string> columnNames)
     {
