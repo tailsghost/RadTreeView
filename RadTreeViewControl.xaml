@@ -30,26 +30,13 @@
                             Text="{Binding Title}" />
                     </Border>
                 </Border>
-
-                <!--<Border
-                    Grid.Column="1"
-                    VerticalAlignment="Stretch"
-                    BorderBrush="LightGray"
-                    BorderThickness="1"
-                    Cursor="SizeWE">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsLast}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                </Border>-->
             </Grid>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type local:RowViewModel}">
+            <Border DataContext="{Binding}" Loaded="Border_Loaded" />
+        </DataTemplate>
+
     </UserControl.Resources>
 
 

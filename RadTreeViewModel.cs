@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
@@ -17,10 +18,17 @@ public class RadTreeViewModel : BaseViewModel
     }
 
 
-    public void AddRow(IEnumerable<Content> contents)
+    public RowViewModel AddRow(IEnumerable<Content> contents)
     {
-        Rows.Add(new RowViewModel(Columns.Count, Rows, contents));
+        var row = new RowViewModel(Columns.Count, Rows, contents)
+        {
+            Image = new BitmapImage(
+            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png"))
+        };
+        Rows.Add(row);
         OnPropertyChanged(nameof(RowsCount));
+
+        return row;
     }
 
     public void AddColumn(List<string> columnNames)
