@@ -1,4 +1,6 @@
-﻿namespace RadTreeView;
+﻿using RadTreeView.Commands;
+
+namespace RadTreeView;
 
 public class ColumnViewModel : BaseViewModel
 {
@@ -27,6 +29,8 @@ public class ColumnViewModel : BaseViewModel
     public string Title { get; }
 
     public bool IsLast { get; }
+
+    public IEnumerable<CommandBase> Commands { get; set; }
 
     public ColumnViewModel(string title, bool isLast)
     {

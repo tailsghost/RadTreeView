@@ -1,14 +1,14 @@
-﻿using System.Collections.ObjectModel;
+﻿using RadTreeView.Commands;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
-public class RowViewModel : BaseViewModel
+public abstract class RowViewModel : BaseViewModel
 {
     public const int RowOffsetImmutable = 25;
-    private int _rowCount;
+    protected int _rowCount;
     private int _rowIndex;
     private int _rowOffset = 0;
     private int _rowHeight = 25;
@@ -17,9 +17,11 @@ public class RowViewModel : BaseViewModel
     private bool _openChildren = false;
     private int _depthChildren = 0;
 
-    private IList<RowViewModel> _topRows;
+    protected IList<RowViewModelList> _topRows;
 
     public int GetTopRowsCount() => _topRows.Count;
+
+    public List<CommandBase> Commands { get; set; }
 
     public RowViewModel TopParent
     {
@@ -34,7 +36,11 @@ public class RowViewModel : BaseViewModel
     public int DepthChildren 
     { 
         get => _depthChildren; 
-        private set => _depthChildren = value; 
+        set
+        {
+            if (_depthChildren != 0) return;
+            _depthChildren = value;
+        }
     }
 
     public RowViewModel Parent { get; private set; }
@@ -114,22 +120,7 @@ public class RowViewModel : BaseViewModel
         set => SetValue(ref _rowHeight, value);
     }
 
-    public RowViewModel AddChildren(IEnumerable<Content> contents)
-    {
-        var row = new RowViewModel(_rowCount, _topRows, contents, this)
-        {
-            RowOffset = _rowOffset + RowOffsetImmutable,
-            TopParent = TopParent,
-            DepthChildren = DepthChildren+1,
-            Image = new BitmapImage(
-            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png")),
-        };
-        Children.Add(row);
-        IsOpenChildren = true;
-        return row;
-    }
-
-    public RowViewModel(int rows, IList<RowViewModel> toprows, IEnumerable<Content> contents, RowViewModel? parent = null)
+    public RowViewModel(int rows, IList<RowViewModelList> toprows, IEnumerable<Content> contents, RowViewModel? parent = null)
     {
         Parent = parent;
         RowContents = new List<Content>(rows);
@@ -145,7 +136,13 @@ public class RowViewModel : BaseViewModel
 
 
 
-    private bool GetIndex(IEnumerable<RowViewModel> items, RowViewModel searchItem, ref int index)
+    public void SelectedRow()
+    {
+
+    }
+
+
+    protected bool GetIndex(IEnumerable<RowViewModel> items, RowViewModel searchItem, ref int index)
     {
         foreach (var it in items)
         {

@@ -19,6 +19,7 @@
                 <Border
                     Grid.Column="0"
                     Padding="2"
+                    Background="Transparent"
                     BorderBrush="LightGray"
                     BorderThickness="1">
                     <Border BorderBrush="LightGray" BorderThickness="1">
