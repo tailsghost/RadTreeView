@@ -1,0 +1,188 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <sys:Double xmlns:sys="clr-namespace:System;assembly=mscorlib" x:Key="ScrollBarThickness">6</sys:Double>
+    <SolidColorBrush x:Key="ThumbBrushNormal">#66000000</SolidColorBrush>
+    <SolidColorBrush x:Key="ThumbBrushHover">#AA000000</SolidColorBrush>
+    <CornerRadius x:Key="ThumbRadius">3</CornerRadius>
+    <Duration x:Key="FadeDuration">0:0:0.16</Duration>
+    <Style x:Key="ThinThumb" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border
+                        x:Name="bd"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="{StaticResource ThumbRadius}">
+                        <Border.Effect>
+                            <DropShadowEffect
+                                BlurRadius="6"
+                                Opacity="0.45"
+                                ShadowDepth="0"
+                                Color="#22000000" />
+                        </Border.Effect>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource ThumbBrushHover}" />
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource ThumbBrushHover}" />
+                            <Setter TargetName="bd" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.02" ScaleY="1.02" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ThinOverlayScrollBar" TargetType="ScrollBar">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="{StaticResource ScrollBarThickness}" />
+        <Setter Property="Height" Value="{StaticResource ScrollBarThickness}" />
+        <Setter Property="Foreground" Value="{StaticResource ThumbBrushNormal}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Visibility="Collapsed" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Visibility="Collapsed" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Background="{TemplateBinding Foreground}" Style="{StaticResource ThinThumb}" />
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Orientation" Value="Horizontal">
+                            <Setter Property="Height" Value="{StaticResource ScrollBarThickness}" />
+                            <Setter Property="Width" Value="Auto" />
+                        </Trigger>
+                        <Trigger Property="Orientation" Value="Vertical">
+                            <Setter Property="Width" Value="{StaticResource ScrollBarThickness}" />
+                            <Setter Property="Height" Value="Auto" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ScrollViewer">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid x:Name="RootGrid" Background="{TemplateBinding Background}">
+                        <ScrollContentPresenter
+                            x:Name="PART_ScrollContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+
+                        <ScrollBar
+                            x:Name="PART_VerticalScrollBar"
+                            Margin="0,4,4,4"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Stretch"
+                            Panel.ZIndex="10"
+                            IsHitTestVisible="True"
+                            Maximum="{TemplateBinding ScrollableHeight}"
+                            Minimum="0"
+                            Opacity="0"
+                            Orientation="Vertical"
+                            Style="{StaticResource ThinOverlayScrollBar}"
+                            ViewportSize="{TemplateBinding ViewportHeight}"
+                            Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                            Value="{Binding VerticalOffset, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+
+                        <ScrollBar
+                            x:Name="PART_HorizontalScrollBar"
+                            Margin="4,0,4,4"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            Panel.ZIndex="10"
+                            IsHitTestVisible="True"
+                            Maximum="{TemplateBinding ScrollableWidth}"
+                            Minimum="0"
+                            Opacity="0"
+                            Orientation="Horizontal"
+                            Style="{StaticResource ThinOverlayScrollBar}"
+                            ViewportSize="{TemplateBinding ViewportWidth}"
+                            Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
+                            Value="{Binding HorizontalOffset, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Collapsed">
+                            <Setter TargetName="PART_VerticalScrollBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ComputedHorizontalScrollBarVisibility" Value="Collapsed">
+                            <Setter TargetName="PART_HorizontalScrollBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="PART_VerticalScrollBar"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="1"
+                                            Duration="{StaticResource FadeDuration}" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="PART_HorizontalScrollBar"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="1"
+                                            Duration="{StaticResource FadeDuration}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="PART_VerticalScrollBar"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0"
+                                            Duration="{StaticResource FadeDuration}" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="PART_HorizontalScrollBar"
+                                            Storyboard.TargetProperty="Opacity"
+                                            To="0"
+                                            Duration="{StaticResource FadeDuration}" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="PART_VerticalScrollBar" Property="Opacity" Value="1" />
+                            <Setter TargetName="PART_HorizontalScrollBar" Property="Opacity" Value="1" />
+                        </Trigger>
+
+                        <EventTrigger RoutedEvent="PreviewMouseWheel">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation
+                                        Storyboard.TargetName="PART_VerticalScrollBar"
+                                        Storyboard.TargetProperty="Opacity"
+                                        To="1"
+                                        Duration="{StaticResource FadeDuration}" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:RadTreeView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Margin="4"
+    MouseLeftButtonDown="PART_RootGrid_MouseLeftButtonDown"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -35,7 +36,10 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type local:RowViewModel}">
-            <Border DataContext="{Binding}" Loaded="Border_Loaded" />
+            <Border
+                Background="Transparent"
+                DataContext="{Binding}"
+                Loaded="Border_Loaded" />
         </DataTemplate>
 
     </UserControl.Resources>
@@ -46,14 +50,53 @@
         Margin="2"
         Padding="1"
         BorderBrush="LightGray"
+        Background="Transparent"
         BorderThickness="2">
-        <Grid
-            x:Name="PART_RootGrid"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch"
-            Background="White"
-            Loaded="PART_RootGrid_Loaded"
-            SnapsToDevicePixels="True" />
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Auto"
+            PanningMode="None"
+            VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="30" />
+                </Grid.RowDefinitions>
+                <Grid
+                    x:Name="PART_RootGrid"
+                    Grid.Row="0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="White"
+                    Loaded="PART_RootGrid_Loaded"
+                    SnapsToDevicePixels="True" />
+                <Border
+                    x:Name="Counter"
+                    Grid.Row="1"
+                    BorderBrush="LightGray"
+                    BorderThickness="1">
+                    <Border
+                        Width="200"
+                        MaxWidth="200"
+                        HorizontalAlignment="Left"
+                        BorderBrush="LightGray"
+                        BorderThickness="0,0,1,0">
+                        <DockPanel>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="15"
+                                FontWeight="Medium"
+                                Text="Кол-во элементов:" />
+                            <TextBlock
+                                Margin="2,0,0,0"
+                                VerticalAlignment="Center"
+                                FontSize="15"
+                                FontWeight="Medium"
+                                Text="{Binding ViewModel.Count}" />
+                        </DockPanel>
+                    </Border>
+                </Border>
+            </Grid>
+        </ScrollViewer>
     </Border>
 
 </UserControl>

@@ -1,37 +1,51 @@
 ﻿using RadTreeView.Commands;
-using System.Collections.ObjectModel;
+using RadTreeView.Interfaces;
 using System.Windows;
 using System.Windows.Media;
 
 namespace RadTreeView;
 
-public abstract class RowViewModel : BaseViewModel
+public abstract class RowViewModel : BaseViewModel, ITree
 {
     public const int RowOffsetImmutable = 25;
     protected int _rowCount;
     private int _rowIndex;
     private int _rowOffset = 0;
     private int _rowHeight = 25;
-    private RowViewModel _topParent;
+    private RowViewModelList _topParent;
 
-    private bool _openChildren = false;
     private int _depthChildren = 0;
 
     protected IList<RowViewModelList> _topRows;
 
     public int GetTopRowsCount() => _topRows.Count;
 
+    public IList<RowViewModelList> GetTopRows() => _topRows.ToList();
+
+    public bool IsFirstTopRow()
+    {
+        if (_topRows.Count == 0) return false;
+        return _topRows[0] == this;
+    }
+
+    public bool RowListEqualsLast()
+    {
+        if (_topRows.Count == 0) return false;
+        return _topRows.Last() == this;
+    }
+
     public List<CommandBase> Commands { get; set; }
 
-    public RowViewModel TopParent
+    public RowViewModelList TopParent
     {
         get => _topParent;
         set
         {
-            if (_topParent != null)
-                throw new StackOverflowException("Родитель уже задан!");
+            _topParent = value;
         }
     }
+
+    public bool UpdateRowsPosition { get; set; }
 
     public int DepthChildren 
     { 
@@ -55,17 +69,19 @@ public abstract class RowViewModel : BaseViewModel
         return -1;
     }
 
-    public bool FirstCompleted { get; set; }
 
     public RowViewModel? GetNextParentItem()
     {
         if (Parent != null)
         {
-            if (Parent.Children.Last() == this) return this;
-            for (var i = 0; i < Parent.Children.Count; i++)
+            if(Parent is RowViewModelList list)
             {
-                var child = Parent.Children[i];
-                if (child == this) return child;
+                if (list.Children.Last() == this) return this;
+                for (var i = 0; i < list.Children.Count; i++)
+                {
+                    var child = list.Children[i];
+                    if (child == this) return child;
+                }
             }
         }
         else
@@ -83,12 +99,6 @@ public abstract class RowViewModel : BaseViewModel
 
     public ImageSource Image { get; set; }
 
-    public bool IsOpenChildren
-    {
-        get => _openChildren;
-        set => SetValue(ref _openChildren, value);
-    }
-
     protected Thickness _thickness;
     public List<Content> RowContents { get; }
 
@@ -99,8 +109,6 @@ public abstract class RowViewModel : BaseViewModel
         get => _thickness;
         set => SetValue(ref _thickness, value);
     }
-
-    public ObservableCollection<RowViewModel> Children = [];
 
     public int RowIndex
     {
@@ -151,12 +159,20 @@ public abstract class RowViewModel : BaseViewModel
                 return true;
             }
             index++;
-            if (GetIndex(it.Children, searchItem, ref index))
+            if(it is RowViewModelList list)
             {
-                return true;
+                if (GetIndex(list.Children, searchItem, ref index))
+                {
+                    return true;
+                }
             }
         }
 
         return false;
+    }
+
+    public virtual void Dispose()
+    {
+        
     }
 }
