@@ -26,15 +26,18 @@ public class RadTreeViewModel : BaseViewModel
         get => Rows.Count;
     }
 
-    public Func<RowHolder> RaiseRowItemHolder;
-    public Func<RowHolder> RaiseRowListHolder;
+    public Func<RowViewModelItem> RaiseRowItemHolder;
+    public Func<RowViewModelList> RaiseRowListHolder;
+
+    public event Action<RowViewModel> AddItem;
+
+    public void RaiseAddItem(RowViewModel item) => AddItem?.Invoke(item);
 
     public RowViewModelList AddRow(RowHolder holder)
     {
-        var row = new RowViewModelList(Columns.Count, Rows, holder.Contents)
+        var row = new RowViewModelList(Columns.Count, Rows)
         {
-            Image = new BitmapImage(
-                new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png")),
+            Image = holder.Image,
         };
         if (holder.IsUseStandartCommand)
         {
@@ -55,6 +58,16 @@ public class RadTreeViewModel : BaseViewModel
         {
             return Add(row, holder.Commands != null ? holder.Commands : []);
         }
+    }
+
+    public RowViewModelList AddRow(RowViewModelList list)
+    {
+        Rows.Add(list);
+        list.TopParent = list;
+        list.RaiseRowListHolder = RaiseRowListHolder;
+        list.RaiseRowItemHolder = RaiseRowItemHolder;
+        OnPropertyChanged(nameof(RowsCount));
+        return list;
     }
 
     private RowViewModelList Add(RowViewModelList row, IEnumerable<CommandBase> commands)
@@ -80,11 +93,9 @@ public class RadTreeViewModel : BaseViewModel
 
     public bool IsInit => Columns.Count != 0;
 
-    public RadTreeViewModel(List<ColumnHolder> columnNames)
+    public RadTreeViewModel()
     {
         Columns = new();
-        if (columnNames.Count == 0) return;
-        Init(columnNames);
     }
 
     private void Init(List<ColumnHolder> columnNames)

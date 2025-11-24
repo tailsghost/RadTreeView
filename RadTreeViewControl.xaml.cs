@@ -41,6 +41,11 @@ public partial class RadTreeViewControl
         ViewModel = model;
         DataContext = this;
         InitializeComponent();
+
+        PART_RootGrid.RowDefinitions.Clear();
+
+        ViewModel.Columns.CollectionChanged += Columns_CollectionChanged;
+        ViewModel.Rows.CollectionChanged += Rows_CollectionChanged;
     }
 
     private void PART_RootGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -51,7 +56,7 @@ public partial class RadTreeViewControl
 
     public RadTreeViewControl()
     {
-        ViewModel = new RadTreeViewModel([]);
+        ViewModel = new RadTreeViewModel();
         DataContext = this;
         InitializeComponent();
 
@@ -324,6 +329,7 @@ public partial class RadTreeViewControl
                     var content = new ContentControl()
                     {
                         Content = row,
+                        DataContext = row,
                         Margin = new Thickness(5, 0, 0, 0)
                     };
 
@@ -339,6 +345,7 @@ public partial class RadTreeViewControl
 
                     RowDefs[row] = rowDef;
                     ViewModel.Count++;
+                    ViewModel.RaiseAddItem(row);
                     break;
                 }
             case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
@@ -460,7 +467,8 @@ public partial class RadTreeViewControl
                 Margin = new Thickness(i == 0 ? row.RowOffset : 0, 0, 0, 0),
                 Cursor = Cursors.Hand,
                 Background = Brushes.Transparent,
-                Tag = row
+                Tag = row,
+                DataContext = row
             };
 
             newBorder.MouseLeftButtonUp += NewBorder_MouseLeftButtonUp;
@@ -488,8 +496,8 @@ public partial class RadTreeViewControl
             for (var i = 0; i < grid.Children.Count; i++)
             {
                 var child = grid.Children[i];
-                if (child is not Border { Name: "PART_newBorder" } borderGrid) continue;
-                borderGrid.BorderBrush = Brushes.LightGray;
+                if (child is not Border { Name: "PART_newBorder", Child: Border borderChild } borderGrid) continue;
+                borderChild.BorderBrush = Brushes.Transparent;
             }
         }
 
@@ -514,8 +522,8 @@ public partial class RadTreeViewControl
             for(var i = 0; i < grid.Children.Count; i++)
             {
                 var child = grid.Children[i];
-                if (child is not Border { Name: "PART_newBorder" } borderGrid) continue;
-                borderGrid.BorderBrush = Brushes.Blue;
+                if (child is not Border { Name: "PART_newBorder", Child: Border borderChild } borderGrid) continue;
+                borderChild.BorderBrush = Brushes.Blue;
             }
         }
         if (OtherElements.TryGetValue(model, out var list))
@@ -528,8 +536,6 @@ public partial class RadTreeViewControl
                 }
             }
         }
-
-        e.Handled = true;
     }
 
     private void AddGrid(RowViewModel row, int index, Grid? parentGrid = null)
@@ -537,7 +543,14 @@ public partial class RadTreeViewControl
 
         if (index == -1) throw new IndexOutOfRangeException("Не найден индекс элемента!");
         var content = row.MainContent;
+
         var value = content.Value;
+
+        var borderValue = new Border()
+        {
+            Child = value,
+            BorderThickness = new Thickness(1)
+        };
 
         var currentGrid = new Grid()
         {
@@ -545,7 +558,8 @@ public partial class RadTreeViewControl
             Tag = row,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsHitTestVisible = true,
-            Background = Brushes.Transparent
+            Background = Brushes.Transparent,
+            DataContext = row
         };
 
         currentGrid.RowDefinitions.Add(new RowDefinition()
@@ -658,7 +672,7 @@ public partial class RadTreeViewControl
         {
             BorderThickness = new Thickness(1, 1, 0, 1),
             BorderBrush = Brushes.LightGray,
-            Child = value,
+            Child = borderValue,
             Margin = new Thickness(row.RowOffset, 0, 0, 0),
             Cursor = Cursors.Hand,
             Tag = row,
@@ -693,10 +707,7 @@ public partial class RadTreeViewControl
         Grid.SetRow(currentGrid, index + 1);
 
         row.PropertyChanged += Row_PropertyChanged;
-        if (row.UpdateRowsPosition)
-        {
-            Task.Run(RebuildVisibleRows);
-        }
+        Task.Run(RebuildVisibleRows);
 
 
         UpdateBorderThickness(row);
@@ -713,23 +724,17 @@ public partial class RadTreeViewControl
         if (sender is not Border { Tag: RowViewModel row }) return;
         if (row is RowViewModel)
         {
-            if (e.ClickCount == 2)
-            {
-                ElementDoubleClick?.Invoke(row);
-                row.SelectedRow();
-            }
-            else
-            {
-                SelectedElement?.Invoke(row);
-                row.SelectedRow();
-                NewBorder_MouseLeftButtonUp(sender, e);
-            }
+            SelectedElement?.Invoke(row);
+            row.SelectedRow();
+            NewBorder_MouseLeftButtonUp(sender, e);
 
             if (row is RowViewModelList rowList)
             {
                 if (rowList.Children.Count > 0)
                 {
+                    rowList.UpdateRowsPosition = true;
                     rowList.IsOpenChildren = !rowList.IsOpenChildren;
+                    rowList.UpdateRowsPosition = false;
                 }
             }
         }

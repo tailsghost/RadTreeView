@@ -1,9 +1,9 @@
 ﻿
 namespace RadTreeView;
 
-public class RowViewModelItem : RowViewModel
+public class RowViewModelItem : RenameItem
 {
-    public RowViewModelItem(int rows, IList<RowViewModelList> toprows, IEnumerable<Content> contents, RowViewModel? parent = null) : base(rows, toprows, contents, parent)
+    public RowViewModelItem(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null) : base(rows, toprows, parent)
     {
     }
 

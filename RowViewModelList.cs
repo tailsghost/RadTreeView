@@ -5,19 +5,19 @@ using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
-public class RowViewModelList : RowViewModel
+public class RowViewModelList : RenameItem
 {
     private bool _openChildren = false;
 
 
     public ObservableCollection<RowViewModel> Children = [];
 
-    public RowViewModelList(int rows, IList<RowViewModelList> toprows, IEnumerable<Content> contents, RowViewModel? parent = null) : base(rows, toprows, contents, parent)
+    public RowViewModelList(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null) : base(rows, toprows, parent)
     {
     }
 
-    public Func<RowHolder> RaiseRowListHolder;
-    public Func<RowHolder> RaiseRowItemHolder;
+    public Func<RowViewModelList> RaiseRowListHolder;
+    public Func<RowViewModelItem> RaiseRowItemHolder;
 
     public void ChangeState()
     {
@@ -33,14 +33,13 @@ public class RowViewModelList : RowViewModel
 
     public RowViewModelList AddChildrenList(RowHolder holder)
     {
-        var row = new RowViewModelList(_rowCount, _topRows, holder.Contents, this)
+        var row = new RowViewModelList(_rowCount, _topRows, this)
         {
             RowOffset = RowOffset + RowOffsetImmutable,
             TopParent = TopParent,
             RaiseRowListHolder = RaiseRowListHolder,
             RaiseRowItemHolder = RaiseRowItemHolder,
-            Image = new BitmapImage(
-            new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/Project_Property_Icon.png")),
+            Image = holder.Image,
         };
         if (holder.IsUseStandartCommand)
         {
@@ -65,12 +64,11 @@ public class RowViewModelList : RowViewModel
 
     public RowViewModelItem AddChildrenItem(RowHolder holder)
     {
-        var row = new RowViewModelItem(_rowCount, _topRows, holder.Contents, this)
+        var row = new RowViewModelItem(_rowCount, _topRows, this)
         {
             RowOffset = RowOffset + RowOffsetImmutable,
             TopParent = TopParent,
-            Image = new BitmapImage(
-                new Uri("pack://application:,,,/RadTreeViewTest;component/Assets/TagItem.png")),
+            Image = holder.Image,
         };
 
         if (holder.IsUseStandartCommand)
@@ -86,6 +84,22 @@ public class RowViewModelList : RowViewModel
         {
             return AddChidlren(row, holder.Commands != null ? holder.Commands : []) as RowViewModelItem;
         }
+    }
+
+    public RowViewModelList AddChildrenList(RowViewModelList row)
+    {
+        row.RowOffset = RowOffset + RowOffsetImmutable;
+        row.TopParent = TopParent;
+        row.RaiseRowListHolder = RaiseRowListHolder;
+        row.RaiseRowItemHolder = RaiseRowItemHolder;
+        return AddChidlren(row) as RowViewModelList;
+    }
+
+    public RowViewModelItem AddChildrenItem(RowViewModelItem row)
+    {
+        row.RowOffset = RowOffset + RowOffsetImmutable;
+        row.TopParent = TopParent;
+        return AddChidlren(row) as RowViewModelItem;
     }
 
 
@@ -119,13 +133,25 @@ public class RowViewModelList : RowViewModel
         }
     }
 
-    private RowViewModel AddChidlren(RowViewModel item, List<CommandBase> commands)
+    private RowViewModel AddChidlren(RowViewModel item)
     {
         Children.Add(item);
         item.DepthChildren = DepthChildren + 1;
-        item.Commands = commands;
+        item.TopParent = TopParent;
+        item.Parent = this;
+        item.UpdateRowsPosition = false;
+        IsOpenChildren = true;
+        item.UpdateRowsPosition = true;
+        return item;
+    }
+
+    private RowViewModel AddChidlren(RowViewModel item, IEnumerable<CommandBase> commandBases)
+    {
+        Children.Add(item);
+        item.DepthChildren = DepthChildren + 1;
         item.TopParent = TopParent;
         item.UpdateRowsPosition = false;
+        item.Commands = commandBases.ToList();
         IsOpenChildren = true;
         item.UpdateRowsPosition = true;
         return item;

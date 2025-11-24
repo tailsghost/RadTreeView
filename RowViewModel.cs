@@ -13,6 +13,20 @@ public abstract class RowViewModel : BaseViewModel, ITree
     private int _rowOffset = 0;
     private int _rowHeight = 25;
     private RowViewModelList _topParent;
+    private string _title;
+    private string _description;
+
+    public string Title
+    {
+        get => _title;
+        set => SetValue(ref _title, value);
+    }
+
+    public string Description
+    {
+        get => _description;
+        set => SetValue(ref _description, value);
+    }
 
     private int _depthChildren = 0;
 
@@ -47,9 +61,9 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public bool UpdateRowsPosition { get; set; }
 
-    public int DepthChildren 
-    { 
-        get => _depthChildren; 
+    public int DepthChildren
+    {
+        get => _depthChildren;
         set
         {
             if (_depthChildren != 0) return;
@@ -57,14 +71,17 @@ public abstract class RowViewModel : BaseViewModel, ITree
         }
     }
 
-    public RowViewModel Parent { get; private set; }
+    public RowViewModel Parent { get; set; }
 
     public int GetIndexRowItem()
     {
-        var index = 0;
-        if (GetIndex(_topRows, this, ref index))
+        var index = -1;
+        foreach (var row in _topRows)
         {
-            return index;
+            if (GetIndex(row, this, ref index))
+            {
+                return index;
+            }
         }
         return -1;
     }
@@ -74,7 +91,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
     {
         if (Parent != null)
         {
-            if(Parent is RowViewModelList list)
+            if (Parent is RowViewModelList list)
             {
                 if (list.Children.Last() == this) return this;
                 for (var i = 0; i < list.Children.Count; i++)
@@ -102,7 +119,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
     protected Thickness _thickness;
     public List<Content> RowContents { get; }
 
-    public Content MainContent { get; }
+    public Content MainContent { get; private set; }
 
     public virtual Thickness BorderThickness
     {
@@ -142,6 +159,24 @@ public abstract class RowViewModel : BaseViewModel, ITree
         BorderThickness = new Thickness(0.5, 0, 0, 0.5);
     }
 
+    public RowViewModel(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null)
+    {
+        Parent = parent;
+        RowContents = new List<Content>(rows);
+        _rowCount = rows;
+        _topRows = toprows;
+        BorderThickness = new Thickness(0.5, 0, 0, 0.5);
+    }
+
+    public void AddContents(IEnumerable<Content> contents)
+    {
+        foreach (var content in contents)
+        {
+            RowContents.Add(content);
+        }
+        MainContent = RowContents[0];
+    }
+
 
 
     public void SelectedRow()
@@ -150,21 +185,23 @@ public abstract class RowViewModel : BaseViewModel, ITree
     }
 
 
-    protected bool GetIndex(IEnumerable<RowViewModel> items, RowViewModel searchItem, ref int index)
+    protected bool GetIndex(RowViewModel current, RowViewModel searchItem, ref int index)
     {
-        foreach (var it in items)
+        if (current is not RowViewModelList rowList) return false;
+        index++;
+        if (!rowList.IsOpenChildren)
+        {
+            return current == searchItem;
+        }
+        foreach (var it in rowList.Children)
         {
             if (it == searchItem)
             {
                 return true;
             }
-            index++;
-            if(it is RowViewModelList list)
+            if (GetIndex(it, searchItem, ref index))
             {
-                if (GetIndex(list.Children, searchItem, ref index))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
@@ -173,6 +210,6 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public virtual void Dispose()
     {
-        
+
     }
 }
