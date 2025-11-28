@@ -24,13 +24,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
     public bool IsEnable
     {
         get => _isEnable;
-        set
-        {
-            if (SetValue(ref _isEnable, value))
-            {
-                UpdateIsEnable(this, value);
-            }
-        }
+        set => SetValue(ref _isEnable, value);
     }
 
     private void UpdateIsEnable(RowViewModel row, bool value)
