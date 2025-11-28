@@ -1,6 +1,7 @@
 ﻿using RadTreeView.Commands;
 using RadTreeView.Interfaces;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -35,6 +36,9 @@ public partial class RadTreeViewControl
 
     public event Action<RowViewModel> SelectedElement;
     public event Action<RowViewModel> ElementDoubleClick;
+    public event Func<object,RowViewModel, MouseButtonEventArgs, bool> MouseLeftItemDown;
+    public event Func<object, RowViewModel, MouseButtonEventArgs, bool> MouseLeftItemUp;
+    public event Func<object, RowViewModel, MouseEventArgs, bool> MouseItemMove;
 
     public RadTreeViewControl(RadTreeViewModel model)
     {
@@ -346,6 +350,7 @@ public partial class RadTreeViewControl
                     RowDefs[row] = rowDef;
                     ViewModel.Count++;
                     ViewModel.RaiseAddItem(row);
+                    AddBorder(row);
                     break;
                 }
             case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
@@ -386,6 +391,8 @@ public partial class RadTreeViewControl
                 if(el is Border border)
                 {
                     border.MouseLeftButtonUp -= NewBorder_MouseLeftButtonUp;
+                    border.MouseLeftButtonDown -= Border_MouseLeftButtonDown;
+                    border.MouseMove -= NewBorder_MouseMove;
                 }
             }
             OtherElements.Remove(row);
@@ -421,9 +428,80 @@ public partial class RadTreeViewControl
         }
     }
 
-    private void Border_Loaded(object sender, RoutedEventArgs e)
+    //private void Border_Loaded(object sender, RoutedEventArgs e)
+    //{
+    //    if (sender is not Border { DataContext: RowViewModel row } border) return;
+    //    try
+    //    {
+    //        var index = row.GetIndexRowItem();
+
+    //        if (row.RowContents.Count > 0)
+    //        {
+    //            AddGrid(row, index);
+    //        }
+
+    //        if (row.Parent != null)
+    //        {
+    //            if (BorderButtons.TryGetValue(row.Parent, out var parentBorder))
+    //            {
+    //                if (row.Parent is RowViewModelList parentRowList)
+    //                {
+    //                    if (parentRowList.Children.Count == 0)
+    //                    {
+    //                        parentBorder.Visibility = Visibility.Collapsed;
+    //                    }
+    //                    else
+    //                    {
+    //                        parentBorder.Visibility = Visibility.Visible;
+    //                    }
+    //                }
+    //            }
+    //        }
+
+    //        if (row.RowContents.Count > 0)
+    //        {
+    //            OtherElements[row] = new List<FrameworkElement>(row.RowContents.Count);
+    //        }
+
+    //        for (var i = 1; i < row.RowContents.Count; i++)
+    //        {
+    //            var content = row.RowContents[i];
+    //            var value = content.Value;
+
+    //            var newBorder = new Border
+    //            {
+    //                BorderThickness = new Thickness(0, 0.5, 0, 0.5),
+    //                BorderBrush = Brushes.LightGray,
+    //                Child = value,
+    //                Margin = new Thickness(i == 0 ? row.RowOffset : 0, 0, 0, 0),
+    //                Cursor = Cursors.Hand,
+    //                Background = Brushes.Transparent,
+    //                Tag = row,
+    //                DataContext = row
+    //            };
+
+    //            newBorder.MouseLeftButtonUp += NewBorder_MouseLeftButtonUp;
+
+    //            OtherElements[row].Add(newBorder);
+
+    //            PART_RootGrid.Children.Add(newBorder);
+    //            Grid.SetColumn(newBorder, i);
+    //            if (index == -1)
+    //            {
+    //                throw new IndexOutOfRangeException("Не найден индекс элемента!");
+    //            }
+
+    //            Grid.SetRow(newBorder, index + 1);
+    //        }
+
+    //        row.UpdateRowsPosition = true;
+    //    }
+    //    catch { 
+    //    }
+    //}
+
+    private void AddBorder(RowViewModel row)
     {
-        if (sender is not Border { DataContext: RowViewModel row } border) return;
         var index = row.GetIndexRowItem();
 
         if (row.RowContents.Count > 0)
@@ -498,6 +576,7 @@ public partial class RadTreeViewControl
                 var child = grid.Children[i];
                 if (child is not Border { Name: "PART_newBorder", Child: Border borderChild } borderGrid) continue;
                 borderChild.BorderBrush = Brushes.Transparent;
+                break;
             }
         }
 
@@ -549,7 +628,8 @@ public partial class RadTreeViewControl
         var borderValue = new Border()
         {
             Child = value,
-            BorderThickness = new Thickness(1)
+            BorderThickness = new Thickness(1),
+            Background = row.IsEnable ? Brushes.Transparent : Brushes.Gray
         };
 
         var currentGrid = new Grid()
@@ -682,6 +762,8 @@ public partial class RadTreeViewControl
         currentGrid.Children.Add(newBorder);
 
         newBorder.MouseLeftButtonDown += Border_MouseLeftButtonDown;
+        newBorder.MouseLeftButtonUp += Border_MouseLeftButtonUp;
+        newBorder.MouseMove += NewBorder_MouseMove;
 
         if (row.Image != null)
         {
@@ -719,25 +801,41 @@ public partial class RadTreeViewControl
         }
     }
 
-    private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void NewBorder_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (sender is not Border { Tag: RowViewModel row }) return;
+        MouseItemMove?.Invoke(sender, row, e);
+    }
+
+    private void Border_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (sender is not Border { Tag: RowViewModel row }) return;
         if (row is RowViewModel)
         {
             SelectedElement?.Invoke(row);
             row.SelectedRow();
+            ViewModel.SelectedItem = row;
             NewBorder_MouseLeftButtonUp(sender, e);
 
-            if (row is RowViewModelList rowList)
+            if(MouseLeftItemUp == null || MouseLeftItemUp(sender,row, e))
             {
-                if (rowList.Children.Count > 0)
+                if (row is RowViewModelList rowList)
                 {
-                    rowList.UpdateRowsPosition = true;
-                    rowList.IsOpenChildren = !rowList.IsOpenChildren;
-                    rowList.UpdateRowsPosition = false;
+                    if (rowList.Children.Count > 0)
+                    {
+                        rowList.UpdateRowsPosition = true;
+                        rowList.IsOpenChildren = !rowList.IsOpenChildren;
+                        rowList.UpdateRowsPosition = false;
+                    }
                 }
             }
         }
+    }
+
+    private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Border { Tag: RowViewModel row }) return;
+        MouseLeftItemDown?.Invoke(sender,row,e);
     }
 
     private void BorderButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -919,6 +1017,21 @@ public partial class RadTreeViewControl
             if (item.UpdateRowsPosition)
                 Task.Run(() => RebuildVisibleRows());
         }
+        else if(e.PropertyName is nameof(RowViewModel.IsEnable))
+        {
+            if(Elements.TryGetValue(item, out var grid))
+            {
+                foreach(var child in grid.Children)
+                {
+                    if (child is not Border border) continue;
+                    if(border.Child is Border borderChild)
+                    {
+                        borderChild.Background = item.IsEnable ?  Brushes.Transparent : Brushes.Gray;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
 
@@ -929,8 +1042,8 @@ public partial class RadTreeViewControl
         var thickness = new Thickness(0, 0, 0, 0);
         if (item.Parent is RowViewModelList rowList)
         {
-            var isFirst = ReferenceEquals(rowList.Children[0], item);
-            var isLast = ReferenceEquals(rowList.Children[^1], item);
+            var isFirst = ReferenceEquals(rowList.Children.FirstOrDefault(), item);
+            var isLast = ReferenceEquals(rowList.Children.LastOrDefault(), item);
             var isLastSection = rowList.TopParent.RowListEqualsLast();
             var isLastItemSection = isLastSection && ReferenceEquals(rowList.TopParent.Children.Last(), item);
 

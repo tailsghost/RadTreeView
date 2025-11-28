@@ -1,12 +1,12 @@
 ﻿using RadTreeView.Commands;
 using System.Collections.ObjectModel;
-using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
 public class RadTreeViewModel : BaseViewModel
 {
     private int _count;
+    private RowViewModel _selectedItem;
 
     public ObservableCollection<RowViewModelList> Rows = [];
     public ObservableCollection<ColumnViewModel> Columns;
@@ -30,6 +30,17 @@ public class RadTreeViewModel : BaseViewModel
     public Func<RowViewModelList> RaiseRowListHolder;
 
     public event Action<RowViewModel> AddItem;
+    public event Action<RowViewModel> ChangeSelectedItem;
+
+    public RowViewModel SelectedItem
+    {
+        get => _selectedItem;
+        set
+        {
+            if(SetValue(ref _selectedItem, value))
+                ChangeSelectedItem?.Invoke(value);
+        }
+    }
 
     public void RaiseAddItem(RowViewModel item) => AddItem?.Invoke(item);
 
@@ -60,9 +71,45 @@ public class RadTreeViewModel : BaseViewModel
         }
     }
 
+
+    public RowViewModel? FindRowToId(Guid id)
+    {
+        foreach(var row in Rows)
+        {
+            var find = FindRowToId(row, id);
+            if (find != null)
+                return find;
+        }
+        return null;
+    }
+
+    private RowViewModel FindRowToId(RowViewModel row, Guid id)
+    {
+        if (row.Id == id) return row;
+        if(row is RowViewModelList list)
+        {
+            foreach(var child in list.Children)
+            {
+                var find = FindRowToId(child, id);
+                if (find != null) return find;
+            }
+        }
+        return null;
+    }
+
     public RowViewModelList AddRow(RowViewModelList list)
     {
         Rows.Add(list);
+        list.TopParent = list;
+        list.RaiseRowListHolder = RaiseRowListHolder;
+        list.RaiseRowItemHolder = RaiseRowItemHolder;
+        OnPropertyChanged(nameof(RowsCount));
+        return list;
+    }
+
+    public RowViewModelList AddRow(RowViewModelList list, int index)
+    {
+        Rows.Insert(index,list);
         list.TopParent = list;
         list.RaiseRowListHolder = RaiseRowListHolder;
         list.RaiseRowItemHolder = RaiseRowItemHolder;
@@ -80,6 +127,7 @@ public class RadTreeViewModel : BaseViewModel
         OnPropertyChanged(nameof(RowsCount));
         return row;
     }
+
 
     public void AddColumn(List<ColumnHolder> columnNames)
     {

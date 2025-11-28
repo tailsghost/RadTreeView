@@ -13,8 +13,37 @@ public abstract class RowViewModel : BaseViewModel, ITree
     private int _rowOffset = 0;
     private int _rowHeight = 25;
     private RowViewModelList _topParent;
-    private string _title;
-    private string _description;
+    private string _title = string.Empty;
+    private string _description = string.Empty;
+    private bool _isEnable = true;
+    private int _depthChildren = 0;
+
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+
+    public bool IsEnable
+    {
+        get => _isEnable;
+        set
+        {
+            if (SetValue(ref _isEnable, value))
+            {
+                UpdateIsEnable(this, value);
+            }
+        }
+    }
+
+    private void UpdateIsEnable(RowViewModel row, bool value)
+    {
+        row.IsEnable = value;
+        if(row is RowViewModelList rowList)
+        {
+            foreach(var child in rowList.Children)
+            {
+                UpdateIsEnable(child, value);
+            }
+        }
+    }
 
     public string Title
     {
@@ -27,8 +56,6 @@ public abstract class RowViewModel : BaseViewModel, ITree
         get => _description;
         set => SetValue(ref _description, value);
     }
-
-    private int _depthChildren = 0;
 
     protected IList<RowViewModelList> _topRows;
 
@@ -83,7 +110,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
                 return index;
             }
         }
-        return -1;
+        return index;
     }
 
 
@@ -189,6 +216,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
     {
         if (current is not RowViewModelList rowList) return false;
         index++;
+        if (current == searchItem) return true;
         if (!rowList.IsOpenChildren)
         {
             return current == searchItem;

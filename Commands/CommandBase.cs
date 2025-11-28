@@ -15,6 +15,8 @@ public abstract class CommandBase : IDisposable
         CommandName = commandName;
     }
 
+    public void RaiseExecute(object? item = null) => Execute(item);
+
     protected abstract void Execute(object? item = null);
     protected virtual bool CanExecute(object? parameter = null)
     {
@@ -25,6 +27,7 @@ public abstract class CommandBase : IDisposable
     {
         Command.Dispose();
         Command = null;
+        CommandParameter = null;
         IsDispose = true;
     }
 }

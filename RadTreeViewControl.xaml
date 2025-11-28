@@ -39,7 +39,7 @@
             <Border
                 Background="Transparent"
                 DataContext="{Binding}"
-                Loaded="Border_Loaded" />
+                />
         </DataTemplate>
 
     </UserControl.Resources>
@@ -49,53 +49,55 @@
         x:Name="MainBorder"
         Margin="2"
         Padding="1"
-        BorderBrush="LightGray"
         Background="Transparent"
+        BorderBrush="LightGray"
         BorderThickness="2">
-        <ScrollViewer
-            HorizontalScrollBarVisibility="Auto"
-            PanningMode="None"
-            VerticalScrollBarVisibility="Auto">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="30" />
-                </Grid.RowDefinitions>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="30" />
+            </Grid.RowDefinitions>
+
+            <ScrollViewer
+                Grid.Row="0"
+                HorizontalScrollBarVisibility="Auto"
+                PanningMode="None"
+                VerticalScrollBarVisibility="Auto">
                 <Grid
                     x:Name="PART_RootGrid"
-                    Grid.Row="0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Loaded="PART_RootGrid_Loaded"
                     SnapsToDevicePixels="True" />
+            </ScrollViewer>
+            <Border
+                x:Name="Counter"
+                Grid.Row="1"
+                BorderBrush="LightGray"
+                BorderThickness="1">
                 <Border
-                    x:Name="Counter"
-                    Grid.Row="1"
+                    Width="200"
+                    MaxWidth="200"
+                    HorizontalAlignment="Left"
                     BorderBrush="LightGray"
-                    BorderThickness="1">
-                    <Border
-                        Width="200"
-                        MaxWidth="200"
-                        HorizontalAlignment="Left"
-                        BorderBrush="LightGray"
-                        BorderThickness="0,0,1,0">
-                        <DockPanel>
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="15"
-                                FontWeight="Medium"
-                                Text="Кол-во элементов:" />
-                            <TextBlock
-                                Margin="2,0,0,0"
-                                VerticalAlignment="Center"
-                                FontSize="15"
-                                FontWeight="Medium"
-                                Text="{Binding ViewModel.Count}" />
-                        </DockPanel>
-                    </Border>
+                    BorderThickness="0,0,1,0">
+                    <DockPanel>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Medium"
+                            Text="Кол-во элементов:" />
+                        <TextBlock
+                            Margin="2,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            FontWeight="Medium"
+                            Text="{Binding ViewModel.Count}" />
+                    </DockPanel>
                 </Border>
-            </Grid>
-        </ScrollViewer>
+            </Border>
+        </Grid>
+
     </Border>
 
 </UserControl>
