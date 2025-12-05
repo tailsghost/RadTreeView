@@ -27,6 +27,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            Foreground="WhiteSmoke"
                             FontSize="14"
                             FontWeight="Medium"
                             Text="{Binding Title}" />
@@ -36,10 +37,7 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type local:RowViewModel}">
-            <Border
-                Background="Transparent"
-                DataContext="{Binding}"
-                />
+            <Border Background="Transparent" DataContext="{Binding}" />
         </DataTemplate>
 
     </UserControl.Resources>
@@ -86,12 +84,14 @@
                             VerticalAlignment="Center"
                             FontSize="15"
                             FontWeight="Medium"
+                            Foreground="WhiteSmoke"
                             Text="Кол-во элементов:" />
                         <TextBlock
                             Margin="2,0,0,0"
                             VerticalAlignment="Center"
                             FontSize="15"
                             FontWeight="Medium"
+                            Foreground="WhiteSmoke"
                             Text="{Binding ViewModel.Count}" />
                     </DockPanel>
                 </Border>
