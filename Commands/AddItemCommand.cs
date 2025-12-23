@@ -13,6 +13,7 @@ public class AddItemCommand : CommandBase
         if(list.RaiseRowItemHolder != null)
         {
             list.AddChildrenItem(list.RaiseRowItemHolder());
+            list.IsOpenChildren = true;
         }
     }
 }

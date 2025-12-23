@@ -208,7 +208,11 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     protected bool GetIndex(RowViewModel current, RowViewModel searchItem, ref int index)
     {
-        if (current is not RowViewModelList rowList) return false;
+        if (current is not RowViewModelList rowList)
+        {
+            index++;
+            return false;
+        }
         index++;
         if (current == searchItem) return true;
         if (!rowList.IsOpenChildren)
@@ -225,6 +229,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
             {
                 return true;
             }
+
         }
 
         return false;

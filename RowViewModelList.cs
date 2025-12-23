@@ -9,7 +9,7 @@ public class RowViewModelList : RenameItem
 {
     private bool _openChildren = false;
 
-
+    public bool IsFolder { get; set; }
     public ObservableCollection<RowViewModel> Children = [];
 
     public RowViewModelList(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null) : base(rows, toprows, parent)
@@ -135,12 +135,12 @@ public class RowViewModelList : RenameItem
 
     private RowViewModel AddChidlren(RowViewModel item)
     {
+        item.Parent = this;
         Children.Add(item);
         item.DepthChildren = DepthChildren + 1;
         item.TopParent = TopParent;
         item.Parent = this;
         item.UpdateRowsPosition = false;
-        IsOpenChildren = true;
         item.UpdateRowsPosition = true;
         return item;
     }
@@ -152,7 +152,6 @@ public class RowViewModelList : RenameItem
         item.TopParent = TopParent;
         item.UpdateRowsPosition = false;
         item.Commands = commandBases.ToList();
-        IsOpenChildren = true;
         item.UpdateRowsPosition = true;
         return item;
     }

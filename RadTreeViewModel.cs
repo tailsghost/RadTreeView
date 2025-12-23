@@ -11,6 +11,8 @@ public class RadTreeViewModel : BaseViewModel
     public ObservableCollection<RowViewModelList> Rows = [];
     public ObservableCollection<ColumnViewModel> Columns;
 
+    public bool IsInitialMode = false;
+
     public int Count 
     { 
         get => _count; 
@@ -31,6 +33,13 @@ public class RadTreeViewModel : BaseViewModel
 
     public event Action<RowViewModel> AddItem;
     public event Action<RowViewModel> ChangeSelectedItem;
+
+    public event Action InitialMenuHandler;
+
+    public void InitialMenu()
+    {
+        InitialMenuHandler?.Invoke();
+    }
 
     public RowViewModel SelectedItem
     {

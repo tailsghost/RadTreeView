@@ -13,6 +13,7 @@ public class AddListCommand : CommandBase
         if (list.RaiseRowListHolder != null)
         {
             list.AddChildrenList(list.RaiseRowListHolder());
+            list.IsOpenChildren = true;
         }
     }
 }
