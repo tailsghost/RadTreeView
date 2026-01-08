@@ -81,25 +81,25 @@ public class RadTreeViewModel : BaseViewModel
     }
 
 
-    public RowViewModel? FindRowToId(Guid id)
+    public RowViewModel? FindRowToName(string name)
     {
         foreach(var row in Rows)
         {
-            var find = FindRowToId(row, id);
+            var find = FindRowToName(row, name);
             if (find != null)
                 return find;
         }
         return null;
     }
 
-    private RowViewModel FindRowToId(RowViewModel row, Guid id)
+    private RowViewModel FindRowToName(RowViewModel row, string name)
     {
-        if (row.Id == id) return row;
+        if (row.Title == name) return row;
         if(row is RowViewModelList list)
         {
             foreach(var child in list.Children)
             {
-                var find = FindRowToId(child, id);
+                var find = FindRowToName(child, name);
                 if (find != null) return find;
             }
         }
