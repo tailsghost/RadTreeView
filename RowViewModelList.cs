@@ -136,8 +136,8 @@ public class RowViewModelList : RenameItem
     private RowViewModel AddChidlren(RowViewModel item)
     {
         item.Parent = this;
-        Children.Add(item);
         item.DepthChildren = DepthChildren + 1;
+        Children.Add(item);
         item.TopParent = TopParent;
         item.Parent = this;
         item.UpdateRowsPosition = false;
@@ -147,8 +147,8 @@ public class RowViewModelList : RenameItem
 
     private RowViewModel AddChidlren(RowViewModel item, IEnumerable<CommandBase> commandBases)
     {
-        Children.Add(item);
         item.DepthChildren = DepthChildren + 1;
+        Children.Add(item);
         item.TopParent = TopParent;
         item.UpdateRowsPosition = false;
         item.Commands = commandBases.ToList();

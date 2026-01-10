@@ -96,7 +96,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public int GetIndexRowItem()
     {
-        var index = -1;
+        var index = 0;
         foreach (var row in _topRows)
         {
             if (GetIndex(row, this, ref index))

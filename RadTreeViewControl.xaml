@@ -37,7 +37,7 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type local:RowViewModel}">
-            <Border Background="Transparent" DataContext="{Binding}" />
+            <Grid />
         </DataTemplate>
 
     </UserControl.Resources>
