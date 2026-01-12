@@ -436,7 +436,7 @@ public partial class RadTreeViewControl
 
     private void OpenContextMenu(IEnumerable<CommandBase> commands, FrameworkElement element)
     {
-        if (!commands.Any()) return;
+        if (commands == null || !commands.Any()) return;
         ContextMenu menu = null;
         if (element.ContextMenu == null)
             menu = new ContextMenu();
