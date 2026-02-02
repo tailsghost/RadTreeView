@@ -195,6 +195,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         {
             RowContents.Add(content);
         }
+        
         MainContent = RowContents[0];
     }
 
