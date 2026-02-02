@@ -4,5 +4,5 @@ namespace RadTreeView.Interfaces;
 
 public interface ITree : IDisposable
 {
-    List<CommandBase> Commands { get; set; }
+    List<RadTreeCommand> Commands { get; set; }
 }

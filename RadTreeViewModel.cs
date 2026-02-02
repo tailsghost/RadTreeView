@@ -61,12 +61,12 @@ public class RadTreeViewModel : BaseViewModel
         };
         if (holder.IsUseStandartCommand)
         {
-            List<CommandBase> commandsBase = [
-                    new OpenAllNodesCommand() { CommandParameter = new List<RowViewModelList> { row } },
-                    new CloseAllNodesCommand() { CommandParameter = new List<RowViewModelList> { row } },
-                    new AddListCommand("Добавить новый список") { CommandParameter = row },
-                    new AddItemCommand("Добавить новый айтем") { CommandParameter = row },
-                    new RemoveHeaderListCommand("Удалить список", item => Rows.Remove(item)) { CommandParameter = row },
+            List<RadTreeCommand> commandsBase = [
+                    new OpenAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
+                    new CloseAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
+                    new AddListCommand<RowViewModelList>("Добавить новый список") { CommandParameter = row },
+                    new AddItemCommand<RowViewModelList>("Добавить новый айтем") { CommandParameter = row },
+                    new RemoveHeaderListCommand<RowViewModelList>("Удалить список", item => Rows.Remove(item)) { CommandParameter = row },
                 ];
             if (holder.Commands != null)
             {
@@ -126,7 +126,7 @@ public class RadTreeViewModel : BaseViewModel
         return list;
     }
 
-    private RowViewModelList Add(RowViewModelList row, IEnumerable<CommandBase> commands)
+    private RowViewModelList Add(RowViewModelList row, IEnumerable<RadTreeCommand> commands)
     {
         Rows.Add(row);
         row.TopParent = row;

@@ -1,16 +1,31 @@
 ﻿using System.Windows.Input;
 
-namespace RadTreeView.RelayCommands;
+namespace RadTreeView.Commands;
 
-public class RelayCommand : ICommand
+
+public class RadTreeCommand: IDisposable
+{
+    public bool IsDispose { get; private set; }
+    public object? CommandParameter { get; set; }
+    public string CommandName { get; protected set; }
+
+    public virtual void Dispose()
+    {
+        CommandParameter = null;
+        IsDispose = true;
+    }
+}
+
+public class RelayCommand : RadTreeCommand, ICommand
 {
     private readonly Action _execute;
     private readonly Func<bool> _canExecute;
 
-    public RelayCommand(Action execute, Func<bool> canExecute = null)
+    public RelayCommand(string commandName, Action exec, Func<bool> can = null)
     {
-        _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-        _canExecute = canExecute;
+        CommandName = commandName;
+        _execute = exec ?? throw new ArgumentNullException(nameof(exec));
+        _canExecute = can;
     }
 
     public event EventHandler CanExecuteChanged
@@ -26,20 +41,17 @@ public class RelayCommand : ICommand
 
     public void Execute(object parameter)
     {
-        if (CanExecute(parameter))
-            _execute();
+        _execute();
     }
 }
 
-public class RelayCommand<T> : ICommand
+public class RelayCommand<T> : RadTreeCommand, ICommand
 {
     private readonly Action<T> _execute;
     private readonly Func<T, bool> _canExecute;
-
-    public RelayCommand(Action<T> execute, Func<T, bool> canExecute = null)
+    public RelayCommand(string commandName, Action<T> exec, Func<T,bool> can = null)
     {
-        _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-        _canExecute = canExecute;
+        CommandName = commandName;
     }
 
     public event EventHandler CanExecuteChanged
@@ -58,8 +70,6 @@ public class RelayCommand<T> : ICommand
 
     public void Execute(object parameter)
     {
-        if (CanExecute(parameter))
-            _execute((T)parameter);
+        _execute((T)parameter);
     }
 }
-

@@ -1,6 +1,7 @@
 ﻿using RadTreeView.Commands;
 using RadTreeView.Interfaces;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace RadTreeView;
@@ -69,7 +70,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         return _topRows.Last() == this;
     }
 
-    public List<CommandBase> Commands { get; set; }
+    public List<RadTreeCommand> Commands { get; set; }
 
     public RowViewModelList TopParent
     {

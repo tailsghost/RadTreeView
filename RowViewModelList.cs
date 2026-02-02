@@ -43,12 +43,12 @@ public class RowViewModelList : RenameItem
         };
         if (holder.IsUseStandartCommand)
         {
-            List<CommandBase> commandsBase = [
-                new OpenAllNodesCommand() { CommandParameter = new List<RowViewModelList> { row } }, 
-                new CloseAllNodesCommand() { CommandParameter = new List<RowViewModelList> { row } },
-                new AddListCommand("Добавить новый список") { CommandParameter = row },
-                new AddItemCommand("Добавить новый айтем") { CommandParameter = row },
-                new RemoveItem("Удалить") { CommandParameter = row },
+            List<RadTreeCommand> commandsBase = [
+                new OpenAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } }, 
+                new CloseAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
+                new AddListCommand<RowViewModelList>("Добавить новый список") { CommandParameter = row },
+                new AddItemCommand<RowViewModelList>("Добавить новый айтем") { CommandParameter = row },
+                new RemoveItem<RowViewModel>("Удалить") { CommandParameter = row },
                 ];
             if (holder.Commands != null)
             {
@@ -73,7 +73,7 @@ public class RowViewModelList : RenameItem
 
         if (holder.IsUseStandartCommand)
         {
-            List<CommandBase> commandsBase = [new RemoveItem("Удалить") { CommandParameter = row }];
+            List<RadTreeCommand> commandsBase = [new RemoveItem<RowViewModel>("Удалить") { CommandParameter = row }];
             if (holder.Commands != null)
             {
                 commandsBase.AddRange(holder.Commands);
@@ -145,7 +145,7 @@ public class RowViewModelList : RenameItem
         return item;
     }
 
-    private RowViewModel AddChidlren(RowViewModel item, IEnumerable<CommandBase> commandBases)
+    private RowViewModel AddChidlren(RowViewModel item, IEnumerable<RadTreeCommand> commandBases)
     {
         item.DepthChildren = DepthChildren + 1;
         Children.Add(item);

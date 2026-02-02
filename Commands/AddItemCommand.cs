@@ -1,12 +1,12 @@
 ﻿namespace RadTreeView.Commands;
 
-public class AddItemCommand : CommandBase
+public class AddItemCommand<T> : RelayCommand<T>
 {
-    public AddItemCommand(string commandName) : base(commandName)
+    public AddItemCommand(string commandName) : base(commandName, Execute)
     {
     }
 
-    protected override void Execute(object? item = null)
+    private static void Execute(T item)
     {
         if (item is not RowViewModelList list) return;
 

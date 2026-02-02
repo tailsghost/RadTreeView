@@ -1,18 +1,19 @@
 ﻿namespace RadTreeView.Commands;
 
-public class RemoveItem : CommandBase
+public class RemoveItem<T> : RelayCommand<T>
 {
-    public RemoveItem(string commandName) : base(commandName)
+    public RemoveItem(string commandName) : base(commandName, Execute)
     {
     }
 
-    protected override void Execute(object? item = null)
+    private static void Execute(T item)
     {
         if (item is not RowViewModel row) return;
         OnRemoveItem(row);
     }
 
-    private void OnRemoveItem(RowViewModel row)
+
+    private static void OnRemoveItem(RowViewModel row)
     {
         if (row is RowViewModelList rowList)
         {
@@ -28,11 +29,11 @@ public class RemoveItem : CommandBase
                 OnRemoveItem(child);
             }
         }
-        else
+        else if(row is RowViewModelItem item)
         {
-            if (row.Parent is not null and RowViewModelList parentList)
+            if (item.Parent is not null and RowViewModelList parentList)
             {
-                parentList.Children.Remove(row);
+                parentList.Children.Remove(item);
             }
         }
     }

@@ -27,9 +27,9 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Foreground="WhiteSmoke"
                             FontSize="14"
                             FontWeight="Medium"
+                            Foreground="WhiteSmoke"
                             Text="{Binding Title}" />
                     </Border>
                 </Border>

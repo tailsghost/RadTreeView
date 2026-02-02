@@ -1,22 +1,17 @@
-﻿namespace RadTreeView.Commands;
+﻿using System.Collections.Generic;
 
-public class OpenAllNodesCommand : CommandBase
+namespace RadTreeView.Commands;
+
+public class OpenAllNodesCommand<T> : RelayCommand<T>
 {
-    protected override void Execute(object? item = null)
-    {
-        if (item is not IEnumerable<RowViewModel> rowList) return;
-
-        OnOpenAllNodes(rowList);
-    }
-
-    public OpenAllNodesCommand() : base("Открыть все узлы")
+    public OpenAllNodesCommand() : base("Открыть все узлы", Execute, CanExecute)
     {
         
     }
 
-    private void OnOpenAllNodes(IEnumerable<RowViewModel> rows)
+    private static void Execute(T item)
     {
-        if (rows == null) return;
+        var rows = (IEnumerable<RowViewModel>)item;
         foreach (var rowViewModel in rows)
         {
             if (rowViewModel is not RowViewModelList rowViewModelList) continue;
@@ -29,5 +24,10 @@ public class OpenAllNodesCommand : CommandBase
                 rowViewModelList.OpenAllNodes(rowViewModelList);
             }
         }
+    }
+
+    private static bool CanExecute(T item)
+    {
+        return item is IEnumerable<RowViewModel>;
     }
 }

@@ -1,20 +1,23 @@
 ﻿namespace RadTreeView.Commands;
 
-public class CloseAllNodesCommand: CommandBase
+public class CloseAllNodesCommand<T>: RelayCommand<T>
 {
-    protected override void Execute(object? item = null)
+    private static void Execute(T item)
     {
-        if (item is not IEnumerable<RowViewModel> rowList) return;
-
-        OnCloseAllNodes(rowList);
+        OnCloseAllNodes((IEnumerable<RowViewModel>)item);
     }
 
-    public CloseAllNodesCommand() : base("Закрыть все узлы")
+    private static bool CanExecute(T item)
+    {
+        return item is IEnumerable<RowViewModel>;
+    }
+
+    public CloseAllNodesCommand() : base("Закрыть все узлы", Execute, CanExecute)
     {
 
     }
 
-    private void OnCloseAllNodes(IEnumerable<RowViewModel> rows)
+    private static void OnCloseAllNodes(IEnumerable<RowViewModel> rows)
     {
         if (rows == null) return;
         foreach (var rowViewModel in rows)
