@@ -451,7 +451,7 @@ public partial class RadTreeViewControl
             menu.Items.Add(new MenuItem()
             {
                 Header = command.CommandName,
-                Command = command.Command,
+                Command = command,
                 CommandParameter = command.CommandParameter,
                 Cursor = Cursors.Hand
             });

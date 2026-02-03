@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 
 namespace RadTreeView;
 
-public class RadTreeViewModel : BaseViewModel
+public class RadTreeViewModel : BaseViewModel, IDisposable
 {
     private int _count;
     private RowViewModel _selectedItem;
@@ -173,5 +173,19 @@ public class RadTreeViewModel : BaseViewModel
         {
             Columns.Add(models[i]);
         }
+    }
+
+    public void Dispose()
+    {
+        _selectedItem.Dispose();
+        _selectedItem = null;
+        foreach (var model in Columns)
+            model.Dispose();
+        Columns.Clear();
+        Columns = null;
+        foreach(var model in Rows)
+            model.Dispose();
+        Rows.Clear();
+        Rows = null;
     }
 }

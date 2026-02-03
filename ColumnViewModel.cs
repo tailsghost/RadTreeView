@@ -56,6 +56,7 @@ public class ColumnViewModel : BaseViewModel, ITree
 
     public void Dispose()
     {
+        foreach (RadTreeCommand command in Commands) { command.Dispose(); }
         Commands.Clear();
     }
 }

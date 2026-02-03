@@ -3,7 +3,7 @@
 namespace RadTreeView.Commands;
 
 
-public class RadTreeCommand: IDisposable
+public abstract class RadTreeCommand: IDisposable, ICommand
 {
     public bool IsDispose { get; private set; }
     public object? CommandParameter { get; set; }
@@ -14,9 +14,18 @@ public class RadTreeCommand: IDisposable
         CommandParameter = null;
         IsDispose = true;
     }
+
+    public event EventHandler CanExecuteChanged
+    {
+        add => CommandManager.RequerySuggested += value;
+        remove => CommandManager.RequerySuggested -= value;
+    }
+
+    public abstract void Execute(object? parameter);
+    public abstract bool CanExecute(object? parameter);
 }
 
-public class RelayCommand : RadTreeCommand, ICommand
+public class RelayCommand : RadTreeCommand
 {
     private readonly Action _execute;
     private readonly Func<bool> _canExecute;
@@ -28,24 +37,18 @@ public class RelayCommand : RadTreeCommand, ICommand
         _canExecute = can;
     }
 
-    public event EventHandler CanExecuteChanged
-    {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
-    }
-
-    public bool CanExecute(object parameter)
+    public override bool CanExecute(object parameter)
     {
         return _canExecute == null || _canExecute();
     }
 
-    public void Execute(object parameter)
+    public override void Execute(object parameter)
     {
         _execute();
     }
 }
 
-public class RelayCommand<T> : RadTreeCommand, ICommand
+public class RelayCommand<T> : RadTreeCommand
 {
     private readonly Action<T> _execute;
     private readonly Func<T, bool> _canExecute;
@@ -54,13 +57,7 @@ public class RelayCommand<T> : RadTreeCommand, ICommand
         CommandName = commandName;
     }
 
-    public event EventHandler CanExecuteChanged
-    {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
-    }
-
-    public bool CanExecute(object parameter)
+    public override bool CanExecute(object parameter)
     {
         if (parameter == null && typeof(T).IsValueType)
             return false;
@@ -68,7 +65,7 @@ public class RelayCommand<T> : RadTreeCommand, ICommand
         return _canExecute == null || _canExecute((T)parameter);
     }
 
-    public void Execute(object parameter)
+    public override void Execute(object parameter)
     {
         _execute((T)parameter);
     }
