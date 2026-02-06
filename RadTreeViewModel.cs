@@ -34,13 +34,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     public event Action<RowViewModel> AddItem;
     public event Action<RowViewModel> ChangeSelectedItem;
 
-    public event Action InitialMenuHandler;
-
-    public void InitialMenu()
-    {
-        InitialMenuHandler?.Invoke();
-    }
-
     public RowViewModel SelectedItem
     {
         get => _selectedItem;

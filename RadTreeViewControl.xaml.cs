@@ -50,8 +50,7 @@ public partial class RadTreeViewControl
         ViewModel = model;
         DataContext = this;
         InitializeComponent();
-
-        ViewModel.InitialMenuHandler += InitialMenu;
+        InitialMenu();
     }
 
     private void PART_RootGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -65,8 +64,7 @@ public partial class RadTreeViewControl
         ViewModel = new RadTreeViewModel();
         DataContext = this;
         InitializeComponent();
-
-        ViewModel.InitialMenuHandler += InitialMenu;
+        InitialMenu();
     }
 
     public void InitialMenu()
