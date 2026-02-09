@@ -43,7 +43,7 @@ public class ColumnViewModel : BaseViewModel, ITree
         set => SetValue(ref _lastPoint, value); 
     }
 
-    public List<RadTreeCommand> Commands { get; set; }
+    public List<RadTreeCommand> Commands { get; set; } = [];
 
     public double Clamp(double value, double min, double max) =>
             Math.Max(min, Math.Min(max, value));

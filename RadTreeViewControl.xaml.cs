@@ -1,38 +1,38 @@
 ﻿using RadTreeView.Commands;
 using RadTreeView.Interfaces;
-using System;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Data.Common;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Xml.Linq;
 
 namespace RadTreeView;
 
-public partial class RadTreeViewControl
+public partial class RadTreeViewControl: ICollectionCommand
 {
+    private bool IsInitialColumns = false;
+    private bool IsInitialRows = false;
+    public RadTreeViewModel ViewModel { get; private set; }
 
-    public RadTreeViewModel ViewModel { get; }
+    private readonly Dictionary<ColumnViewModel, ContentPresenter> Columns = [];
+    private readonly Dictionary<RowViewModel, List<ContentPresenter>> Rows = [];
+    private readonly Dictionary<ColumnViewModel, ColumnDefinition> ColumnsDef = [];
 
-    private readonly Dictionary<ColumnViewModel, ContentPresenter> Columns = new();
-    private readonly Dictionary<ColumnViewModel, ColumnDefinition> ColumnsDef = new();
-
-    private readonly Dictionary<RowViewModel, Grid> Elements = new();
-    private readonly List<RowViewModel> ElementsIndex = new();
-    private readonly Dictionary<RowViewModel, Border> VerticalLines = new();
-    private readonly Dictionary<RowViewModel, Border> BorderButtons = new();
-    private readonly Dictionary<RowViewModel, List<FrameworkElement>> OtherElements = new();
-    private readonly Dictionary<RowViewModel, RowDefinition> RowDefs = new();
+    private readonly Dictionary<RowViewModel, Grid> Elements = [];
+    private readonly List<RowViewModel> ElementsIndex = [];
+    private readonly Dictionary<RowViewModel, Border> VerticalLines = [];
+    private readonly Dictionary<RowViewModel, Border> BorderButtons = [];
+    private readonly Dictionary<RowViewModel, List<FrameworkElement>> OtherElements = [];
+    private readonly Dictionary<RowViewModel, RowDefinition> RowDefs = [];
 
 
-    private readonly Dictionary<ColumnViewModel, Popup> ColumnPopups = new();
-    private readonly Dictionary<ColumnViewModel, double> PopupStartOffsets = new();
-    private readonly Dictionary<ColumnViewModel, double> PopupStartVerticalOffsets = new();
+    private readonly Dictionary<ColumnViewModel, Popup> ColumnPopups = [];
+    private readonly Dictionary<ColumnViewModel, double> PopupStartOffsets = [];
+    private readonly Dictionary<ColumnViewModel, double> PopupStartVerticalOffsets = [];
 
 
     private void Invoke(Action action) => Application.Current.Dispatcher.Invoke(action);
@@ -45,12 +45,93 @@ public partial class RadTreeViewControl
     public event Func<object, RowViewModel, MouseButtonEventArgs, bool> MouseLeftItemUp;
     public event Func<object, RowViewModel, MouseEventArgs, bool> MouseItemMove;
 
+
+    public static readonly DependencyProperty LayoutItemTemplateSelectorProperty = DependencyProperty.Register(nameof(LayoutItemTemplateSelector), typeof(DataTemplateSelector), typeof(RadTreeViewControl),
+    new FrameworkPropertyMetadata(null));
+
+    public static readonly DependencyProperty CommandsProperty =
+        DependencyProperty.Register(
+            nameof(Commands),
+            typeof(Collection<CommandModel>),
+            typeof(RibbonControl),
+            new PropertyMetadata(new Collection<CommandModel>()));
+
+    public Collection<CommandModel> Commands
+    {
+        get
+        {
+            var col = (Collection<CommandModel>?)GetValue(CommandsProperty);
+            if (col == null)
+            {
+                col = [];
+                SetValue(CommandsProperty, col);
+            }
+            return col;
+        }
+        set => SetValue(CommandsProperty, value);
+    }
+
+
+    public static readonly DependencyProperty ColumnsCollectionProperty =
+    DependencyProperty.Register(
+        nameof(ColumnsCollection),
+        typeof(Collection<ColumnHolder>),
+        typeof(RibbonControl),
+        new FrameworkPropertyMetadata(null));
+
+    public Collection<ColumnHolder> ColumnsCollection
+    {
+        get
+        {
+            var col = (Collection<ColumnHolder>?)GetValue(ColumnsCollectionProperty);
+            if (col == null)
+            {
+                col = [];
+                SetValue(ColumnsCollectionProperty, col);
+            }
+            return col;
+        }
+        set => SetValue(ColumnsCollectionProperty, value);
+    }
+
+
+    public static readonly DependencyProperty RowsCollectionProperty =
+    DependencyProperty.Register(
+        nameof(RowsCollection),
+        typeof(Collection<RowHolderList>),
+        typeof(RibbonControl),
+        new FrameworkPropertyMetadata(null));
+
+    public Collection<RowHolderList> RowsCollection
+    {
+        get
+        {
+            var col = (Collection<RowHolderList>?)GetValue(RowsCollectionProperty);
+            if (col == null)
+            {
+                col = [];
+                SetValue(RowsCollectionProperty, col);
+            }
+            return col;
+        }
+        set => SetValue(RowsCollectionProperty, value);
+    }
+
+    public IRadTreeCommandStrategy RadTreeCommandStrategy { get; set; }
+    public IRadTreeLayoutUpdateStrategy RadTreeLayoutUpdateStrategy { get; set; }
+
+    public DataTemplateSelector LayoutItemTemplateSelector
+    {
+        get => (DataTemplateSelector)GetValue(LayoutItemTemplateSelectorProperty);
+        set => SetValue(LayoutItemTemplateSelectorProperty, value);
+    }
+
     public RadTreeViewControl(RadTreeViewModel model)
     {
         ViewModel = model;
         DataContext = this;
         InitializeComponent();
-        InitialMenu();
+        PART_RootGrid.RowDefinitions.Clear();
     }
 
     private void PART_RootGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -61,23 +142,23 @@ public partial class RadTreeViewControl
 
     public RadTreeViewControl()
     {
-        ViewModel = new RadTreeViewModel();
-        DataContext = this;
         InitializeComponent();
-        InitialMenu();
+        PART_RootGrid.RowDefinitions.Clear();
+        DataContextChanged += RadTreeViewControl_DataContextChanged;
+    }
+
+    private void RadTreeViewControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is not RadTreeViewControl { DataContext: RadTreeViewModel model }) return;
+        ViewModel = model;
+        DataContextChanged -= RadTreeViewControl_DataContextChanged;
+        DataContext = this;
     }
 
     public void InitialMenu()
     {
-        PART_RootGrid.RowDefinitions.Clear();
-        ViewModel.Columns.CollectionChanged += Columns_CollectionChanged;
-        ViewModel.Rows.CollectionChanged += Rows_CollectionChanged;
-
         InitialColumns();
-        foreach (var row in ViewModel.Rows)
-        {
-            InitialRows(row);
-        }
+        InitialRows();
     }
 
     private void Columns_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -174,17 +255,20 @@ public partial class RadTreeViewControl
         mainGrid.ColumnDefinitions.Clear();
         mainGrid.RowDefinitions.Clear();
 
-        foreach (var header in ViewModel.Columns)
-        {
-            mainGrid.Children.Add(new ContentPresenter()
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Content = header,
-                Tag = header
-            });
-        }
+        InitialMenu();
     }
 
+    public void InitialRows()
+    {
+        if(IsInitialRows) return;
+        ViewModel.AddRows([.. RowsCollection]);
+        foreach (var row in ViewModel.Rows)
+        {
+            InitialRows(row);
+        }
+        IsInitialRows = true;
+        ViewModel.Rows.CollectionChanged += Rows_CollectionChanged;
+    }
 
     private void InitialRows(RowViewModel row)
     {
@@ -213,15 +297,17 @@ public partial class RadTreeViewControl
 
         PART_RootGrid.RowDefinitions.Last().Height = new GridLength(row.RowHeight, GridUnitType.Pixel);
 
-        var content = new ContentControl()
+        var column = ViewModel.Columns[0];
+        var columnUI = Columns[column];
+        var template = LayoutItemTemplateSelector.SelectTemplate(row, columnUI);
+
+        var content = new ContentPresenter()
         {
             Content = row,
             DataContext = row,
-            Margin = new Thickness(5, 0, 0, 0)
+            Margin = new Thickness(5, 0, 0, 0),
+            ContentTemplate = template
         };
-
-        Grid.SetRow(content, PART_RootGrid.RowDefinitions.Count - 1);
-        PART_RootGrid.Children.Add(content);
 
         var rowDef = new RowDefinition()
         {
@@ -233,15 +319,24 @@ public partial class RadTreeViewControl
         RowDefs[row] = rowDef;
         ViewModel.Count++;
         ViewModel.RaiseAddItem(row);
-        AddBorder(row);
+        Rows[row] = [content];
+        AddBorder(row, content);
     }
 
-    private void InitialColumns()
+    public void InitialColumns()
     {
+        if (IsInitialColumns) return;
+        if (ColumnsCollection.Count > 0)
+        {
+            ViewModel.AddColumn([.. ColumnsCollection]);
+        }
         foreach (var header in ViewModel.Columns)
         {
+            RadTreeCommandStrategy?.AddColumnCommand(header, ViewModel.Holders[header], this);
             InitialColumn(header);
         }
+        IsInitialColumns = true;
+        ViewModel.Columns.CollectionChanged += Columns_CollectionChanged;
     }
 
     private void InitialColumn(ColumnViewModel header)
@@ -258,12 +353,14 @@ public partial class RadTreeViewControl
                 Height = new GridLength(1, GridUnitType.Star)
             });
         }
+
         var content = new ContentPresenter()
         {
             Content = header,
             Tag = header,
             Height = header.ColumnHeight,
             VerticalAlignment = VerticalAlignment.Stretch,
+            ContentTemplateSelector = LayoutItemTemplateSelector
         };
 
         content.MouseRightButtonUp += Column_MouseRightButtonUp;
@@ -531,13 +628,13 @@ public partial class RadTreeViewControl
         PART_RootGrid.RowDefinitions.Last().Height = new GridLength(1, GridUnitType.Star);
     }
 
-    private void AddBorder(RowViewModel row)
+    private void AddBorder(RowViewModel row, ContentPresenter content)
     {
         var index = row.GetIndexRowItem();
 
-        if (row.RowContents.Count > 0)
+        if(Rows[row] != null)
         {
-            AddGrid(row, index);
+            AddGrid(row, index, content);
         }
 
         var depth = 0;
@@ -561,9 +658,11 @@ public partial class RadTreeViewControl
             }
         }
 
-        if (row.RowContents.Count > 0)
+        var contents = Rows[row];
+
+        if (ViewModel.Columns.Count > 0)
         {
-            OtherElements[row] = new List<FrameworkElement>(row.RowContents.Count);
+            OtherElements[row] = new List<FrameworkElement>(ViewModel.Columns.Count);
         }
 
         Visibility visibility = Visibility.Collapsed;
@@ -577,22 +676,31 @@ public partial class RadTreeViewControl
             visibility = row.Parent is RowViewModelList { IsOpenChildren: true } ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        for (var i = 1; i < row.RowContents.Count; i++)
+        for (var i = 1; i < ViewModel.Columns.Count; i++)
         {
-            var content = row.RowContents[i];
-            var value = content.Value;
+            var column = ViewModel.Columns[i];
+            var columnUI = Columns[column];
+            var template = LayoutItemTemplateSelector.SelectTemplate(row, columnUI);
+
+            var presenter = new ContentPresenter
+            {
+                Content = row,
+                ContentTemplate = template,
+            };
 
             var newBorder = new Border
             {
                 BorderThickness = new Thickness(0, 0.5, 0, 0.5),
                 BorderBrush = Brushes.LightGray,
-                Child = value,
+                Child = presenter,
                 Margin = new Thickness(i == 0 ? row.RowOffset : 0, 0, 0, 0),
                 Cursor = Cursors.Hand,
                 Background = Brushes.Transparent,
                 Tag = row,
                 DataContext = row
             };
+
+            Rows[row].Add(presenter);
 
             newBorder.MouseLeftButtonUp += NewBorder_MouseLeftButtonUp;
             newBorder.Visibility = visibility;
@@ -666,16 +774,13 @@ public partial class RadTreeViewControl
         }
     }
 
-    private void AddGrid(RowViewModel row, int index, Grid? parentGrid = null)
+    private void AddGrid(RowViewModel row, int index, ContentPresenter content, Grid? parentGrid = null)
     {
         if (index == -1) throw new IndexOutOfRangeException("Не найден индекс элемента!");
-        var content = row.MainContent;
-
-        var value = content.Value;
 
         var borderValue = new Border()
         {
-            Child = value,
+            Child = content,
             BorderThickness = new Thickness(1),
             Background = row.IsEnable ? Brushes.Transparent : Brushes.Gray
         };
@@ -1247,4 +1352,8 @@ public partial class RadTreeViewControl
         });
     }
 
+    public void Dispose()
+    {
+        
+    }
 }

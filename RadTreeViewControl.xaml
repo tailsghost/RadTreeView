@@ -9,40 +9,6 @@
     MouseLeftButtonDown="PART_RootGrid_MouseLeftButtonDown"
     mc:Ignorable="d">
 
-    <UserControl.Resources>
-        <DataTemplate DataType="{x:Type local:ColumnViewModel}">
-            <Grid Cursor="Hand" Tag="{Binding}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="2" />
-                </Grid.ColumnDefinitions>
-
-                <Border
-                    Grid.Column="0"
-                    Padding="2"
-                    Background="Transparent"
-                    BorderBrush="LightGray"
-                    BorderThickness="1">
-                    <Border BorderBrush="LightGray" BorderThickness="1">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="14"
-                            FontWeight="Medium"
-                            Foreground="WhiteSmoke"
-                            Text="{Binding Title}" />
-                    </Border>
-                </Border>
-            </Grid>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type local:RowViewModel}">
-            <Grid />
-        </DataTemplate>
-
-    </UserControl.Resources>
-
-
     <Border
         x:Name="MainBorder"
         Margin="2"

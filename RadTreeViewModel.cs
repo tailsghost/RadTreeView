@@ -1,5 +1,4 @@
-﻿using RadTreeView.Commands;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 
 namespace RadTreeView;
 
@@ -10,13 +9,14 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<RowViewModelList> Rows = [];
     public ObservableCollection<ColumnViewModel> Columns;
+    public Dictionary<ColumnViewModel,ColumnHolder> Holders = [];
 
     public bool IsInitialMode = false;
 
-    public int Count 
-    { 
-        get => _count; 
-        set => SetValue(ref _count, value); 
+    public int Count
+    {
+        get => _count;
+        set => SetValue(ref _count, value);
     }
 
     public int ColumnCount
@@ -39,12 +39,45 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
         get => _selectedItem;
         set
         {
-            if(SetValue(ref _selectedItem, value))
+            if (SetValue(ref _selectedItem, value))
                 ChangeSelectedItem?.Invoke(value);
         }
     }
 
     public void RaiseAddItem(RowViewModel item) => AddItem?.Invoke(item);
+
+    public void AddRows(List<RowHolderList> holder)
+    {
+        foreach (RowHolderList rowHolder in holder)
+        {
+            var row = new RowViewModelList(Columns.Count, Rows)
+            {
+                Image = rowHolder.Image,
+                Title = rowHolder.Title,
+            };
+            AddRows(rowHolder.Rows, row);
+            Add(row);
+        }
+    }
+
+    private void AddRows(IEnumerable<RowHolder> holder, RowViewModelList parent = null)
+    {
+        foreach(RowHolder rowHolder in holder)
+        {
+            if(rowHolder is RowHolderList rowHolderList)
+            {
+                var result = parent.AddChildrenList(rowHolder);
+                if (rowHolderList.Rows.Count > 0)
+                {
+                    AddRows(rowHolderList.Rows, result);
+                }
+            }
+            if(rowHolder is RowHolderItem rowHolderItem)
+            {
+                parent.AddChildrenItem(rowHolderItem);
+            }
+        }
+    }
 
     public RowViewModelList AddRow(RowHolder holder)
     {
@@ -52,31 +85,13 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
         {
             Image = holder.Image,
         };
-        if (holder.IsUseStandartCommand)
-        {
-            List<RadTreeCommand> commandsBase = [
-                    new OpenAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
-                    new CloseAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
-                    new AddListCommand<RowViewModelList>("Добавить новый список") { CommandParameter = row },
-                    new AddItemCommand<RowViewModelList>("Добавить новый айтем") { CommandParameter = row },
-                    new RemoveHeaderListCommand<RowViewModelList>("Удалить список", item => Rows.Remove(item)) { CommandParameter = row },
-                ];
-            if (holder.Commands != null)
-            {
-                commandsBase.AddRange(holder.Commands);
-            }
-            return Add(row, commandsBase);
-        }
-        else
-        {
-            return Add(row, holder.Commands != null ? holder.Commands : []);
-        }
+        return Add(row);
     }
 
 
     public RowViewModel? FindRowToName(string name)
     {
-        foreach(var row in Rows)
+        foreach (var row in Rows)
         {
             var find = FindRowToName(row, name);
             if (find != null)
@@ -88,9 +103,9 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     private RowViewModel FindRowToName(RowViewModel row, string name)
     {
         if (row.Title == name) return row;
-        if(row is RowViewModelList list)
+        if (row is RowViewModelList list)
         {
-            foreach(var child in list.Children)
+            foreach (var child in list.Children)
             {
                 var find = FindRowToName(child, name);
                 if (find != null) return find;
@@ -111,7 +126,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public RowViewModelList AddRow(RowViewModelList list, int index)
     {
-        Rows.Insert(index,list);
+        Rows.Insert(index, list);
         list.TopParent = list;
         list.RaiseRowListHolder = RaiseRowListHolder;
         list.RaiseRowItemHolder = RaiseRowItemHolder;
@@ -119,11 +134,10 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
         return list;
     }
 
-    private RowViewModelList Add(RowViewModelList row, IEnumerable<RadTreeCommand> commands)
+    private RowViewModelList Add(RowViewModelList row)
     {
         Rows.Add(row);
         row.TopParent = row;
-        row.Commands = commands.ToList();
         row.RaiseRowListHolder = RaiseRowListHolder;
         row.RaiseRowItemHolder = RaiseRowItemHolder;
         OnPropertyChanged(nameof(RowsCount));
@@ -133,11 +147,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public void AddColumn(List<ColumnHolder> columnNames)
     {
-        if (Columns.Count != 0)
-        {
-            throw new InvalidOperationException("Columns уже инициализирован!");
-        }
-
         Init(columnNames);
     }
 
@@ -145,7 +154,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public RadTreeViewModel()
     {
-        Columns = new();
+        Columns = [];
     }
 
     private void Init(List<ColumnHolder> columnNames)
@@ -157,9 +166,9 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             var it = columnNames[i];
             models[i] = new ColumnViewModel(it.Title, columnNames.Count - 1 == i)
             {
-                Commands = it.Commands,
-                ColumnIndex = i
+                ColumnIndex = i,
             };
+            Holders.Add(models[i], it);
         }
 
         for (var i = 0; i < models.Length; i++)
@@ -176,7 +185,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             model.Dispose();
         Columns.Clear();
         Columns = null;
-        foreach(var model in Rows)
+        foreach (var model in Rows)
             model.Dispose();
         Rows.Clear();
         Rows = null;

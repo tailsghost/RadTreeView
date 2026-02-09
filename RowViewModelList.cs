@@ -5,7 +5,7 @@ using System.Windows.Media.Imaging;
 
 namespace RadTreeView;
 
-public class RowViewModelList : RenameItem
+public class RowViewModelList : RowViewModel
 {
     private bool _openChildren = false;
 
@@ -41,25 +41,7 @@ public class RowViewModelList : RenameItem
             RaiseRowItemHolder = RaiseRowItemHolder,
             Image = holder.Image,
         };
-        if (holder.IsUseStandartCommand)
-        {
-            List<RadTreeCommand> commandsBase = [
-                new OpenAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } }, 
-                new CloseAllNodesCommand<IEnumerable<RowViewModel>>() { CommandParameter = new List<RowViewModelList> { row } },
-                new AddListCommand<RowViewModelList>("Добавить новый список") { CommandParameter = row },
-                new AddItemCommand<RowViewModelList>("Добавить новый айтем") { CommandParameter = row },
-                new RemoveItem<RowViewModel>("Удалить") { CommandParameter = row },
-                ];
-            if (holder.Commands != null)
-            {
-                commandsBase.AddRange(holder.Commands);
-            }
-            return AddChidlren(row, commandsBase) as RowViewModelList;
-        }
-        else
-        {
-            return AddChidlren(row, holder.Commands != null ? holder.Commands : []) as RowViewModelList;
-        }
+        return AddChidlren(row) as RowViewModelList;
     }
 
     public RowViewModelItem AddChildrenItem(RowHolder holder)
@@ -71,19 +53,7 @@ public class RowViewModelList : RenameItem
             Image = holder.Image,
         };
 
-        if (holder.IsUseStandartCommand)
-        {
-            List<RadTreeCommand> commandsBase = [new RemoveItem<RowViewModel>("Удалить") { CommandParameter = row }];
-            if (holder.Commands != null)
-            {
-                commandsBase.AddRange(holder.Commands);
-            }
-            return AddChidlren(row, commandsBase) as RowViewModelItem;
-        }
-        else
-        {
-            return AddChidlren(row, holder.Commands != null ? holder.Commands : []) as RowViewModelItem;
-        }
+        return AddChidlren(row) as RowViewModelItem;
     }
 
     public RowViewModelList AddChildrenList(RowViewModelList row)
@@ -141,17 +111,6 @@ public class RowViewModelList : RenameItem
         item.TopParent = TopParent;
         item.Parent = this;
         item.UpdateRowsPosition = false;
-        item.UpdateRowsPosition = true;
-        return item;
-    }
-
-    private RowViewModel AddChidlren(RowViewModel item, IEnumerable<RadTreeCommand> commandBases)
-    {
-        item.DepthChildren = DepthChildren + 1;
-        Children.Add(item);
-        item.TopParent = TopParent;
-        item.UpdateRowsPosition = false;
-        item.Commands = commandBases.ToList();
         item.UpdateRowsPosition = true;
         return item;
     }

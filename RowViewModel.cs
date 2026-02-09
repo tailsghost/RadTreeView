@@ -21,6 +21,11 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    public bool IsRenameMode
+    {
+        get => field;
+        set => SetValue(ref field, value);
+    }
 
     public bool IsEnable
     {
@@ -70,7 +75,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         return _topRows.Last() == this;
     }
 
-    public List<RadTreeCommand> Commands { get; set; }
+    public List<RadTreeCommand> Commands { get; set; } = [];
 
     public RowViewModelList TopParent
     {
@@ -139,9 +144,6 @@ public abstract class RowViewModel : BaseViewModel, ITree
     public ImageSource Image { get; set; }
 
     protected Thickness _thickness;
-    public List<Content> RowContents { get; }
-
-    public Content MainContent { get; private set; }
 
     public virtual Thickness BorderThickness
     {
@@ -167,37 +169,12 @@ public abstract class RowViewModel : BaseViewModel, ITree
         set => SetValue(ref _rowHeight, value);
     }
 
-    public RowViewModel(int rows, IList<RowViewModelList> toprows, IEnumerable<Content> contents, RowViewModel? parent = null)
-    {
-        Parent = parent;
-        RowContents = new List<Content>(rows);
-        _rowCount = rows;
-        _topRows = toprows;
-        foreach (var content in contents)
-        {
-            RowContents.Add(content);
-        }
-        MainContent = RowContents[0];
-        BorderThickness = new Thickness(0.5, 0, 0, 0.5);
-    }
-
     public RowViewModel(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null)
     {
         Parent = parent;
-        RowContents = new List<Content>(rows);
         _rowCount = rows;
         _topRows = toprows;
         BorderThickness = new Thickness(0.5, 0, 0, 0.5);
-    }
-
-    public void AddContents(IEnumerable<Content> contents)
-    {
-        foreach (var content in contents)
-        {
-            RowContents.Add(content);
-        }
-        
-        MainContent = RowContents[0];
     }
 
 
