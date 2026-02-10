@@ -4,15 +4,15 @@ namespace RadTreeView.Commands;
 
 public class OpenAllNodesCommand<T> : RelayCommand<T>
 {
-    public OpenAllNodesCommand() : base("Открыть все узлы", Execute, CanExecute)
+    public OpenAllNodesCommand() : base("Открыть все узлы")
     {
-        
+        Init(Execute);
     }
 
-    private static void Execute(T item)
+    private void Execute(T item)
     {
-        var rows = (IEnumerable<RowViewModel>)item;
-        foreach (var rowViewModel in rows)
+        if (item is not RowViewModelList list) return;
+        foreach (var rowViewModel in list.Children)
         {
             if (rowViewModel is not RowViewModelList rowViewModelList) continue;
             if (rowViewModelList.Children.Count == 0) continue;
@@ -24,10 +24,6 @@ public class OpenAllNodesCommand<T> : RelayCommand<T>
                 rowViewModelList.OpenAllNodes(rowViewModelList);
             }
         }
-    }
-
-    private static bool CanExecute(T item)
-    {
-        return item is IEnumerable<RowViewModel>;
+        list.IsOpenChildren = true;
     }
 }

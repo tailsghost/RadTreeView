@@ -2,18 +2,27 @@
 
 public class AddItemCommand<T> : RelayCommand<T>
 {
-    public AddItemCommand(string commandName) : base(commandName, Execute)
+    private RowHolderItem _baseHolder;
+    public AddItemCommand(string commandName, RowHolderItem baseHolder) : base(commandName)
     {
+        _baseHolder = baseHolder;
+        Init(Execute);
     }
 
-    private static void Execute(T item)
+    private void Execute(T item)
     {
         if (item is not RowViewModelList list) return;
 
-        if(list.RaiseRowItemHolder != null)
+        if(_baseHolder != null)
         {
-            list.AddChildrenItem(list.RaiseRowItemHolder());
+            list.AddChildrenItem(_baseHolder.Copy());
             list.IsOpenChildren = true;
         }
+    }
+
+    public override void Dispose()
+    {
+        _baseHolder = null;
+        base.Dispose();
     }
 }

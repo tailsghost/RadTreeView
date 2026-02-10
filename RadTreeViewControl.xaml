@@ -58,7 +58,7 @@
                             FontSize="15"
                             FontWeight="Medium"
                             Foreground="WhiteSmoke"
-                            Text="{Binding ViewModel.Count}" />
+                            Text="{Binding Count}" />
                     </DockPanel>
                 </Border>
             </Border>

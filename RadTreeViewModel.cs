@@ -9,7 +9,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<RowViewModelList> Rows = [];
     public ObservableCollection<ColumnViewModel> Columns;
-    public Dictionary<ColumnViewModel,ColumnHolder> Holders = [];
 
     public bool IsInitialMode = false;
 
@@ -28,8 +27,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
         get => Rows.Count;
     }
 
-    public Func<RowViewModelItem> RaiseRowItemHolder;
-    public Func<RowViewModelList> RaiseRowListHolder;
 
     public event Action<RowViewModel> AddItem;
     public event Action<RowViewModel> ChangeSelectedItem;
@@ -74,7 +71,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             }
             if(rowHolder is RowHolderItem rowHolderItem)
             {
-                parent.AddChildrenItem(rowHolderItem);
+                var result = parent.AddChildrenItem(rowHolderItem);
             }
         }
     }
@@ -118,8 +115,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Add(list);
         list.TopParent = list;
-        list.RaiseRowListHolder = RaiseRowListHolder;
-        list.RaiseRowItemHolder = RaiseRowItemHolder;
         OnPropertyChanged(nameof(RowsCount));
         return list;
     }
@@ -128,8 +123,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Insert(index, list);
         list.TopParent = list;
-        list.RaiseRowListHolder = RaiseRowListHolder;
-        list.RaiseRowItemHolder = RaiseRowItemHolder;
         OnPropertyChanged(nameof(RowsCount));
         return list;
     }
@@ -138,8 +131,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Add(row);
         row.TopParent = row;
-        row.RaiseRowListHolder = RaiseRowListHolder;
-        row.RaiseRowItemHolder = RaiseRowItemHolder;
         OnPropertyChanged(nameof(RowsCount));
         return row;
     }
@@ -167,8 +158,8 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             models[i] = new ColumnViewModel(it.Title, columnNames.Count - 1 == i)
             {
                 ColumnIndex = i,
+                CommandHolder = [..it.Commands]
             };
-            Holders.Add(models[i], it);
         }
 
         for (var i = 0; i < models.Length; i++)

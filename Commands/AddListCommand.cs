@@ -2,17 +2,20 @@
 
 public class AddListCommand<T> : RelayCommand<T>
 {
-    public AddListCommand(string commandName) : base(commandName, Execute)
+    private RowHolderList _baseHolder;
+    public AddListCommand(string commandName, RowHolderList baseHolder) : base(commandName)
     {
+        _baseHolder = baseHolder;
+        Init(Execute);
     }
 
-    protected static void Execute(T item)
+    protected void Execute(T item)
     {
         if (item is not RowViewModelList list) return;
 
-        if (list.RaiseRowListHolder != null)
+        if (_baseHolder != null)
         {
-            list.AddChildrenList(list.RaiseRowListHolder());
+            list.AddChildrenList(_baseHolder.Copy());
             list.IsOpenChildren = true;
         }
     }

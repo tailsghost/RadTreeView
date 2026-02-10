@@ -2,7 +2,8 @@
 
 public class RemoveHeaderListCommand<T> : RelayCommand<T>
 {
-    public RemoveHeaderListCommand(string commandName, Action<T> removeList) : base(commandName, removeList)
+    public RemoveHeaderListCommand(string commandName, Action<T> removeList) : base(commandName)
     {
+        Init(removeList);
     }
 }

@@ -12,12 +12,9 @@ public class RowViewModelList : RowViewModel
     public bool IsFolder { get; set; }
     public ObservableCollection<RowViewModel> Children = [];
 
-    public RowViewModelList(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null) : base(rows, toprows, parent)
+    public RowViewModelList(int rows, IList<RowViewModelList> toprows, RowViewModelList? parent = null) : base(rows, toprows, parent)
     {
     }
-
-    public Func<RowViewModelList> RaiseRowListHolder;
-    public Func<RowViewModelItem> RaiseRowItemHolder;
 
     public void ChangeState()
     {
@@ -37,8 +34,6 @@ public class RowViewModelList : RowViewModel
         {
             RowOffset = RowOffset + RowOffsetImmutable,
             TopParent = TopParent,
-            RaiseRowListHolder = RaiseRowListHolder,
-            RaiseRowItemHolder = RaiseRowItemHolder,
             Image = holder.Image,
         };
         return AddChidlren(row) as RowViewModelList;
@@ -60,8 +55,6 @@ public class RowViewModelList : RowViewModel
     {
         row.RowOffset = RowOffset + RowOffsetImmutable;
         row.TopParent = TopParent;
-        row.RaiseRowListHolder = RaiseRowListHolder;
-        row.RaiseRowItemHolder = RaiseRowItemHolder;
         return AddChidlren(row) as RowViewModelList;
     }
 

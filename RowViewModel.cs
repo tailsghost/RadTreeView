@@ -27,6 +27,8 @@ public abstract class RowViewModel : BaseViewModel, ITree
         set => SetValue(ref field, value);
     }
 
+    public List<CommandHolder> CommandHolder { get; } = [];
+
     public bool IsEnable
     {
         get => _isEnable;
@@ -61,7 +63,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public int GetTopRowsCount() => _topRows.Count;
 
-    public IList<RowViewModelList> GetTopRows() => _topRows.ToList();
+    public IList<RowViewModelList> GetTopRows() => [.. _topRows];
 
     public bool IsFirstTopRow()
     {
@@ -98,7 +100,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         }
     }
 
-    public RowViewModel Parent { get; set; }
+    public RowViewModelList Parent { get; set; }
 
     public int GetIndexRowItem()
     {
@@ -169,7 +171,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         set => SetValue(ref _rowHeight, value);
     }
 
-    public RowViewModel(int rows, IList<RowViewModelList> toprows, RowViewModel? parent = null)
+    public RowViewModel(int rows, IList<RowViewModelList> toprows, RowViewModelList? parent = null)
     {
         Parent = parent;
         _rowCount = rows;

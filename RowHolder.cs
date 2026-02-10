@@ -4,9 +4,11 @@ using System.Windows.Media;
 
 namespace RadTreeView;
 
-public class RowHolder
+public abstract class RowHolder
 {
-    public Collection<string> CommandsName { get; set; } = [];
+    public Collection<CommandModel> Commands { get; set; } = [];
     public string Title { get; set; } = string.Empty;
     public ImageSource Image { get; set; }
+
+    public abstract RowHolder Copy();
 }

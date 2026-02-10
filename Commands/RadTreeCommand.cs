@@ -23,16 +23,28 @@ public abstract class RadTreeCommand: IDisposable, ICommand
 
     public abstract void Execute(object? parameter);
     public abstract bool CanExecute(object? parameter);
+
+    public abstract RadTreeCommand Copy();
 }
 
 public class RelayCommand : RadTreeCommand
 {
-    private readonly Action _execute;
-    private readonly Func<bool> _canExecute;
+    private Action _execute;
+    private Func<bool> _canExecute;
+
+    public RelayCommand(string commandName)
+    {
+        CommandName = commandName;
+    }
 
     public RelayCommand(string commandName, Action exec, Func<bool> can = null)
     {
         CommandName = commandName;
+        Init(exec, can);
+    }
+
+    public void Init(Action exec, Func<bool> can = null)
+    {
         _execute = exec ?? throw new ArgumentNullException(nameof(exec));
         _canExecute = can;
     }
@@ -46,15 +58,33 @@ public class RelayCommand : RadTreeCommand
     {
         _execute();
     }
+
+    public override RadTreeCommand Copy()
+    {
+        var command = new RelayCommand(CommandName);
+        command.Init(_execute, _canExecute);
+        return command;
+    }
 }
 
 public class RelayCommand<T> : RadTreeCommand
 {
-    private readonly Action<T> _execute;
-    private readonly Func<T, bool> _canExecute;
-    public RelayCommand(string commandName, Action<T> exec, Func<T,bool> can = null)
+    private Action<T> _execute;
+    private Func<T, bool> _canExecute;
+    public RelayCommand(string commandName)
     {
         CommandName = commandName;
+    }
+    public RelayCommand(string commandName, Action<T> exec, Func<T, bool> can = null)
+    {
+        CommandName = commandName;
+        Init(exec, can);
+    }
+
+    public void Init(Action<T> exec, Func<T, bool> can = null)
+    {
+        _execute = exec ?? throw new ArgumentNullException(nameof(exec));
+        _canExecute = can;
     }
 
     public override bool CanExecute(object parameter)
@@ -68,5 +98,12 @@ public class RelayCommand<T> : RadTreeCommand
     public override void Execute(object parameter)
     {
         _execute((T)parameter);
+    }
+
+    public override RadTreeCommand Copy()
+    {
+        var command = new RelayCommand<T>(CommandName);
+        command.Init(_execute, _canExecute);
+        return command;
     }
 }

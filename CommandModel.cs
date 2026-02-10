@@ -3,7 +3,7 @@ using System.Windows;
 
 namespace RadTreeView;
 
-public class CommandModel : DependencyObject
+public class CommandModel
 {
     public string Header { get; set; }
 

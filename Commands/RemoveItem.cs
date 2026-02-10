@@ -2,18 +2,19 @@
 
 public class RemoveItem<T> : RelayCommand<T>
 {
-    public RemoveItem(string commandName) : base(commandName, Execute)
+    public RemoveItem(string commandName) : base(commandName)
     {
+        Init(Execute);
     }
 
-    private static void Execute(T item)
+    private void Execute(T item)
     {
         if (item is not RowViewModel row) return;
         OnRemoveItem(row);
     }
 
 
-    private static void OnRemoveItem(RowViewModel row)
+    private void OnRemoveItem(RowViewModel row)
     {
         if (row is RowViewModelList rowList)
         {
