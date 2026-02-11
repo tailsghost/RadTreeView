@@ -50,7 +50,16 @@ public abstract class RowViewModel : BaseViewModel, ITree
     public string Title
     {
         get => _title;
-        set => SetValue(ref _title, value);
+        set
+        {
+            if(_title  != value)
+            {
+                var old = _title;
+                _title = value;
+                TopParent?.Owner?.Rename(this, old);
+                OnPropertyChanged();
+            }
+        }
     }
 
     public string Description

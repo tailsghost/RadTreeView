@@ -12,6 +12,8 @@ public class RowViewModelList : RowViewModel
     public bool IsFolder { get; set; }
     public ObservableCollection<RowViewModel> Children = [];
 
+    public RadTreeViewModel Owner;
+
     public RowViewModelList(int rows, IList<RowViewModelList> toprows, RowViewModelList? parent = null) : base(rows, toprows, parent)
     {
     }
@@ -135,5 +137,6 @@ public class RowViewModelList : RowViewModel
         }
         Children.Clear();
         base.Dispose();
+        Owner = null;
     }
 }

@@ -31,6 +31,13 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     public event Action<RowViewModel> AddItem;
     public event Action<RowViewModel> ChangeSelectedItem;
 
+    public event Action<RowViewModel, string> RenameItemAction;
+
+    internal void Rename(RowViewModel rowViewModel, string oldName)
+    {
+        RenameItemAction?.Invoke(rowViewModel, oldName);
+    }
+
     public RowViewModel SelectedItem
     {
         get => _selectedItem;
@@ -71,7 +78,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             }
             if(rowHolder is RowHolderItem rowHolderItem)
             {
-                var result = parent.AddChildrenItem(rowHolderItem);
+                parent.AddChildrenItem(rowHolderItem);
             }
         }
     }
@@ -115,6 +122,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Add(list);
         list.TopParent = list;
+        list.Owner = this;
         OnPropertyChanged(nameof(RowsCount));
         return list;
     }
@@ -123,6 +131,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Insert(index, list);
         list.TopParent = list;
+        list.Owner = this;
         OnPropertyChanged(nameof(RowsCount));
         return list;
     }
@@ -131,6 +140,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     {
         Rows.Add(row);
         row.TopParent = row;
+        row.Owner = this;
         OnPropertyChanged(nameof(RowsCount));
         return row;
     }
