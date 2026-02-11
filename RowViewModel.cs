@@ -27,7 +27,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
         set => SetValue(ref field, value);
     }
 
-    public List<CommandHolder> CommandHolder { get; } = [];
+    public List<CommandHolder> CommandHolder { get; set; } = [];
 
     public bool IsEnable
     {
@@ -218,6 +218,12 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public virtual void Dispose()
     {
-
+        CommandHolder.Clear();
+        _topRows = null;
+        foreach(var command in Commands)
+            command.Dispose();
+        Commands.Clear();
+        TopParent = null;
+        Parent = null;
     }
 }

@@ -51,6 +51,13 @@ public class RowViewModelList : RowViewModel
         return AddChidlren(row) as RowViewModelItem;
     }
 
+    public RowViewModelList AddChildrenListInsert(RowViewModelList row, int index)
+    {
+        row.RowOffset = RowOffset + RowOffsetImmutable;
+        row.TopParent = TopParent;
+        return AddChidlrenInsert(row, index) as RowViewModelList;
+    }
+
     public RowViewModelList AddChildrenList(RowViewModelList row)
     {
         row.RowOffset = RowOffset + RowOffsetImmutable;
@@ -106,5 +113,27 @@ public class RowViewModelList : RowViewModel
         item.UpdateRowsPosition = false;
         item.UpdateRowsPosition = true;
         return item;
+    }
+
+    private RowViewModel AddChidlrenInsert(RowViewModel item, int index)
+    {
+        item.Parent = this;
+        item.DepthChildren = DepthChildren + 1;
+        Children.Insert(index,item);
+        item.TopParent = TopParent;
+        item.Parent = this;
+        item.UpdateRowsPosition = false;
+        item.UpdateRowsPosition = true;
+        return item;
+    }
+
+    public override void Dispose()
+    {
+        foreach(var child in Children)
+        {
+            child.Dispose(); 
+        }
+        Children.Clear();
+        base.Dispose();
     }
 }
