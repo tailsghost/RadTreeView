@@ -32,6 +32,7 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Loaded="PART_RootGrid_Loaded"
+                    Unloaded="PART_RootGrid_Unloaded"
                     SnapsToDevicePixels="True" />
             </ScrollViewer>
             <Border

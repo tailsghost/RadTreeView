@@ -15,8 +15,6 @@ namespace RadTreeView;
 
 public partial class RadTreeViewControl
 {
-    private bool IsInitialColumns = false;
-    private bool IsInitialRows = false;
     public RadTreeViewModel ViewModel { get; private set; }
 
     private readonly Dictionary<ColumnViewModel, ContentPresenter> Columns = [];
@@ -316,23 +314,24 @@ public partial class RadTreeViewControl
 
     private void PART_RootGrid_Loaded(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.IsInit) return;
+        if (ViewModel.IsInit && !ViewModel.IsDisposable) return;
+        ViewModel.Count = 0;
         var mainGrid = PART_RootGrid;
         mainGrid.ColumnDefinitions.Clear();
         mainGrid.RowDefinitions.Clear();
-
         InitialMenu();
+        ViewModel.IsDisposable = false;
     }
 
     public void InitialRows()
     {
-        if (IsInitialRows) return;
+
         ViewModel.AddRows([.. RowsCollection]);
         foreach (var row in ViewModel.Rows)
         {
             InitialRows(row);
         }
-        IsInitialRows = true;
+        ViewModel.Rows.CollectionChanged -= Rows_CollectionChanged;
         ViewModel.Rows.CollectionChanged += Rows_CollectionChanged;
     }
 
@@ -396,7 +395,6 @@ public partial class RadTreeViewControl
 
     public void InitialColumns()
     {
-        if (IsInitialColumns) return;
         if (ColumnsCollection.Count > 0)
         {
             ViewModel.AddColumn([.. ColumnsCollection]);
@@ -405,7 +403,6 @@ public partial class RadTreeViewControl
         {
             InitialColumn(header);
         }
-        IsInitialColumns = true;
         ViewModel.Columns.CollectionChanged += Columns_CollectionChanged;
     }
 
@@ -423,7 +420,6 @@ public partial class RadTreeViewControl
                 Height = new GridLength(1, GridUnitType.Star)
             });
         }
-
         RadTreeCommandStrategy?.AddColumnCommand(header, AllCommandsCollection, ColumnCommandCollection, ViewModel.Rows);
 
         var content = new ContentPresenter()
@@ -1386,5 +1382,216 @@ public partial class RadTreeViewControl
 
     public void Dispose()
     {
+        try
+        {
+            DataContextChanged -= RadTreeViewControl_DataContextChanged;
+
+            Invoke(() =>
+            {
+                if (PART_RootGrid != null)
+                {
+                    PART_RootGrid.Loaded -= PART_RootGrid_Loaded;
+                    PART_RootGrid.MouseLeftButtonDown -= PART_RootGrid_MouseLeftButtonDown;
+                }
+            });
+
+            if (ViewModel != null)
+            {
+                if (ViewModel.Rows != null)
+                    ViewModel.Rows.CollectionChanged -= Rows_CollectionChanged;
+
+                if (ViewModel.Columns != null)
+                    ViewModel.Columns.CollectionChanged -= Columns_CollectionChanged;
+            }
+
+            foreach (var kv in ColumnPopups.ToList())
+            {
+                var col = kv.Key;
+                var popup = kv.Value;
+                try
+                {
+                    Invoke(() =>
+                    {
+                        popup.IsOpen = false;
+                        popup.Child = null;
+                    });
+                }
+                catch { /* ignore */ }
+
+                ColumnPopups.Remove(col);
+                PopupStartOffsets.Remove(col);
+                PopupStartVerticalOffsets.Remove(col);
+            }
+
+            foreach (var kv in Columns.ToList())
+            {
+                var header = kv.Key;
+                var contentPresenter = kv.Value;
+
+                try { header.PropertyChanged -= HeaderColumn_PropertyChanged; } catch { }
+
+                Invoke(() =>
+                {
+                    if (contentPresenter != null)
+                        PART_RootGrid.Children.Remove(contentPresenter);
+                });
+
+                Columns.Remove(header);
+
+                if (ColumnsDef.TryGetValue(header, out var def))
+                {
+                    Invoke(() => PART_RootGrid.ColumnDefinitions.Remove(def));
+                    ColumnsDef.Remove(header);
+                }
+            }
+            Columns.Clear();
+            ColumnsDef.Clear();
+
+            Invoke(() =>
+            {
+                var splitters = PART_RootGrid.Children.OfType<Border>().Where(b => b.Tag is ColumnViewModel).ToList();
+                foreach (var splitter in splitters)
+                {
+                    splitter.MouseLeftButtonDown -= Splitter_MouseLeftButtonDown;
+                    splitter.MouseLeftButtonUp -= Splitter_MouseLeftButtonUp;
+                    splitter.MouseMove -= Splitter_MouseMove;
+                    PART_RootGrid.Children.Remove(splitter);
+                }
+            });
+
+            foreach (var kv in RowDefs.ToList())
+            {
+                var row = kv.Key;
+                var rowDef = kv.Value;
+                Invoke(() => PART_RootGrid.RowDefinitions.Remove(rowDef));
+                RowDefs.Remove(row);
+            }
+            RowDefs.Clear();
+
+            foreach (var kv in Elements.ToList())
+            {
+                var row = kv.Key;
+                var grid = kv.Value;
+
+                try
+                {
+                    Invoke(() =>
+                    {
+                        foreach (var child in grid.Children.OfType<UIElement>().ToList())
+                        {
+                            if (child is Border b)
+                            {
+                                b.MouseLeftButtonDown -= Border_MouseLeftButtonDown;
+                                b.MouseLeftButtonUp -= Border_MouseLeftButtonUp;
+                                b.MouseMove -= NewBorder_MouseMove;
+                            }
+                        }
+
+                        PART_RootGrid.Children.Remove(grid);
+                    });
+                }
+                catch { /* ignore */ }
+
+                Elements.Remove(row);
+            }
+            Elements.Clear();
+
+            foreach (var kv in OtherElements.ToList())
+            {
+                var row = kv.Key;
+                var list = kv.Value;
+                foreach (var el in list.ToList())
+                {
+                    if (el is Border border)
+                    {
+                        border.MouseLeftButtonUp -= NewBorder_MouseLeftButtonUp;
+                        border.MouseLeftButtonDown -= Border_MouseLeftButtonDown;
+                        border.MouseMove -= NewBorder_MouseMove;
+                    }
+
+                    Invoke(() => PART_RootGrid.Children.Remove(el));
+                }
+                OtherElements.Remove(row);
+            }
+            OtherElements.Clear();
+
+            foreach (var kv in VerticalLines.ToList())
+            {
+                var row = kv.Key;
+                var border = kv.Value;
+                Invoke(() => PART_RootGrid.Children.Remove(border));
+                VerticalLines.Remove(row);
+            }
+            VerticalLines.Clear();
+
+            foreach (var kv in BorderButtons.ToList())
+            {
+                var row = kv.Key;
+                var button = kv.Value;
+                button.MouseLeftButtonUp -= BorderButton_MouseLeftButtonUp;
+                Invoke(() => PART_RootGrid.Children.Remove(button));
+                BorderButtons.Remove(row);
+            }
+            BorderButtons.Clear();
+
+            foreach (var kv in Rows.ToList())
+            {
+                var row = kv.Key;
+                var presenters = kv.Value;
+                foreach (var p in presenters.ToList())
+                {
+                    Invoke(() => PART_RootGrid.Children.Remove(p));
+                }
+                Rows.Remove(row);
+            }
+            Rows.Clear();
+
+            foreach (var row in ElementsIndex.ToList())
+            {
+                try { row.PropertyChanged -= Row_PropertyChanged; } catch { }
+
+                if (row is RowViewModelList list)
+                {
+                    try { list.Children.CollectionChanged -= Rows_CollectionChanged; } catch { }
+                }
+            }
+            ElementsIndex.Clear();
+
+            try { RowListCommandCollection?.Clear(); } catch { }
+            try { ColumnCommandCollection?.Clear(); } catch { }
+            try { RowItemCommandCollection?.Clear(); } catch { }
+            try { AllCommandsCollection?.Clear(); } catch { }
+            try { ColumnsCollection?.Clear(); } catch { }
+            try { RowsCollection?.Clear(); } catch { }
+
+            ColumnPopups.Clear();
+            PopupStartOffsets.Clear();
+            PopupStartVerticalOffsets.Clear();
+
+            ViewModel = null;
+            DataContext = null;
+
+            Invoke(() =>
+            {
+                try
+                {
+                    PART_RootGrid.Children.Clear();
+                    PART_RootGrid.RowDefinitions.Clear();
+                    PART_RootGrid.ColumnDefinitions.Clear();
+                }
+                catch { }
+            });
+
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RadTreeViewControl.Dispose error: {ex}");
+        }
+    }
+
+    private void PART_RootGrid_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsDisposable)
+            Dispose();
     }
 }

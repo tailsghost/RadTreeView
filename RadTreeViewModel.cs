@@ -4,8 +4,11 @@ namespace RadTreeView;
 
 public class RadTreeViewModel : BaseViewModel, IDisposable
 {
+    public bool IsDisposable { get; set; } = false;
     private int _count;
     private RowViewModel _selectedItem;
+    public bool IsInitColumn { get; private set; } = false;
+    public bool IsInitRow { get; private set; } = false;
 
     public ObservableCollection<RowViewModelList> Rows = [];
     public ObservableCollection<ColumnViewModel> Columns;
@@ -52,6 +55,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public void AddRows(List<RowHolderList> holder)
     {
+        if (IsInitRow) return;
         foreach (RowHolderList rowHolder in holder)
         {
             var row = new RowViewModelList(Columns.Count, Rows)
@@ -62,6 +66,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             AddRows(rowHolder.Rows, row);
             Add(row);
         }
+        IsInitRow = true;
     }
 
     private void AddRows(IEnumerable<RowHolder> holder, RowViewModelList parent = null)
@@ -148,7 +153,9 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public void AddColumn(List<ColumnHolder> columnNames)
     {
+        if (IsInitColumn) return;
         Init(columnNames);
+        IsInitColumn = true;
     }
 
     public bool IsInit => Columns.Count != 0;
