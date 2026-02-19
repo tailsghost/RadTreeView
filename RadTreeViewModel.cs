@@ -187,7 +187,7 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _selectedItem.Dispose();
+        _selectedItem?.Dispose();
         _selectedItem = null;
         foreach (var model in Columns)
             model.Dispose();
