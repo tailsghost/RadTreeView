@@ -6,7 +6,6 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 {
     public bool IsDisposable { get; set; } = false;
     private int _count;
-    private RowViewModel _selectedItem;
     public bool IsInitColumn { get; private set; } = false;
     public bool IsInitRow { get; private set; } = false;
 
@@ -43,10 +42,10 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public RowViewModel SelectedItem
     {
-        get => _selectedItem;
+        get => field;
         set
         {
-            if (SetValue(ref _selectedItem, value))
+            if (SetValue(ref field, value))
                 ChangeSelectedItem?.Invoke(value);
         }
     }
@@ -187,15 +186,13 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _selectedItem?.Dispose();
-        _selectedItem = null;
+        SelectedItem?.Dispose();
+        SelectedItem = null;
         foreach (var model in Columns)
             model.Dispose();
         Columns.Clear();
-        Columns = null;
         foreach (var model in Rows)
             model.Dispose();
         Rows.Clear();
-        Rows = null;
     }
 }

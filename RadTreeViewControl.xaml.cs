@@ -1016,7 +1016,6 @@ public partial class RadTreeViewControl
         {
             SelectedElement?.Invoke(row);
             row.SelectedRow();
-            ViewModel.SelectedItem = row;
             NewBorder_MouseLeftButtonUp(sender, e);
 
             if (MouseLeftItemUp == null || MouseLeftItemUp(sender, row, e))
@@ -1043,6 +1042,7 @@ public partial class RadTreeViewControl
     private void BorderButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { Tag: RowViewModelList rowList }) return;
+
         rowList.IsOpenChildren = !rowList.IsOpenChildren;
     }
 

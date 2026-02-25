@@ -192,7 +192,7 @@ public abstract class RowViewModel : BaseViewModel, ITree
 
     public void SelectedRow()
     {
-
+        TopParent?.Owner?.SelectedItem = this;
     }
 
 

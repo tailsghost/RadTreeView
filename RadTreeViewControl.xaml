@@ -32,8 +32,8 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     Loaded="PART_RootGrid_Loaded"
-                    Unloaded="PART_RootGrid_Unloaded"
-                    SnapsToDevicePixels="True" />
+                    SnapsToDevicePixels="True"
+                    Unloaded="PART_RootGrid_Unloaded" />
             </ScrollViewer>
             <Border
                 x:Name="Counter"
