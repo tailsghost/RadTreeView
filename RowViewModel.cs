@@ -19,6 +19,11 @@ public abstract class RowViewModel : BaseViewModel, ITree
     private bool _isEnable = true;
     private int _depthChildren = 0;
 
+    public bool IsCommandVisibility { 
+        get => field;
+        set => SetValue(ref field, value);
+    }
+
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public bool IsRenameMode
@@ -87,6 +92,18 @@ public abstract class RowViewModel : BaseViewModel, ITree
     }
 
     public List<RadTreeCommand> Commands { get; set; } = [];
+
+    public void AddCommand(RadTreeCommand command)
+    {
+        Commands.Add(command);
+        IsCommandVisibility = Commands.Count>0;
+    }
+
+    public void RemoveCommand(RadTreeCommand command)
+    {
+        Commands.Remove(command);
+        IsCommandVisibility = Commands.Count > 0;
+    }
 
     public RowViewModelList TopParent
     {

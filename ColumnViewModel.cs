@@ -61,4 +61,14 @@ public class ColumnViewModel : BaseViewModel, ITree
         foreach (RadTreeCommand command in Commands) { command.Dispose(); }
         Commands.Clear();
     }
+
+    public void AddCommand(RadTreeCommand command)
+    {
+        Commands.Add(command);
+    }
+
+    public void RemoveCommand(RadTreeCommand command)
+    {
+        Commands.Remove(command);
+    }
 }
