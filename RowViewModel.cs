@@ -52,6 +52,12 @@ public abstract class RowViewModel : BaseViewModel, ITree
         }
     }
 
+    public void UpdateTitle(string newTitle)
+    {
+        _title = newTitle;
+        OnPropertyChanged(nameof(Title));
+    }
+
     public string Title
     {
         get => _title;
@@ -60,9 +66,19 @@ public abstract class RowViewModel : BaseViewModel, ITree
             if(_title  != value)
             {
                 var old = _title;
-                _title = value;
-                TopParent?.Owner?.Rename(this, old);
-                OnPropertyChanged();
+                if (string.IsNullOrEmpty(old))
+                {
+                    _title = value;
+                    OnPropertyChanged();
+                    return;
+                }
+                var result = TopParent?.Owner?.Rename(this, old, value);
+                if (result == null) return;
+                if (result.Value)
+                {
+                    _title = value;
+                    OnPropertyChanged();
+                }
             }
         }
     }

@@ -34,10 +34,44 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     public event Action<RowViewModel> ChangeSelectedItem;
 
     public event Action<RowViewModel, string> RenameItemAction;
+    public event Action<string> RenameItemErrorAction;
 
-    internal void Rename(RowViewModel rowViewModel, string oldName)
+    internal bool Rename(RowViewModel rowViewModel, string oldName, string newName)
     {
-        RenameItemAction?.Invoke(rowViewModel, oldName);
+        if (IsExistsName(newName))
+        {
+            RenameItemErrorAction?.Invoke(newName);
+            return false;
+        }
+        RenameItemAction?.Invoke(rowViewModel, newName);
+        return true;
+    }
+
+    private bool IsExistsName(string name)
+    {
+        foreach (var row in Rows)
+        {
+            if (IsExistsName(row, name))
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsExistsName(RowViewModel row, string name)
+    {
+        if (row is RowViewModelList list)
+        {
+            foreach (var child in list.Children)
+            {
+                if(IsExistsName(child, name)) return true;
+            }
+        }
+        else if (row is RowViewModelItem item)
+        {
+            if (item.Title == name) return true;
+        }
+
+        return false;
     }
 
     public RowViewModel SelectedItem
