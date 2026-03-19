@@ -208,7 +208,8 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
             models[i] = new ColumnViewModel(it.Title, columnNames.Count - 1 == i)
             {
                 ColumnIndex = i,
-                CommandHolder = [..it.Commands]
+                CommandHolder = [..it.Commands],
+                ColumnWidth = it.ColumnWidth == 0 ? 200 : it.ColumnWidth
             };
         }
 
