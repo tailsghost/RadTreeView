@@ -322,6 +322,7 @@ public partial class RadTreeViewControl
         mainGrid.RowDefinitions.Clear();
         InitialMenu();
         ViewModel.IsDisposable = false;
+        ViewModel.UpdateCount();
     }
 
     public void InitialRows()
@@ -426,7 +427,6 @@ public partial class RadTreeViewControl
         PART_RootGrid.RowDefinitions.Add(rowDef);
 
         RowDefs[row] = rowDef;
-        ViewModel.Count++;
         ViewModel.RaiseAddItem(row);
         Rows[row] = [content];
         AddBorder(row, content);
@@ -621,7 +621,6 @@ public partial class RadTreeViewControl
 
     private void RemoveChild(RowViewModel row)
     {
-        ViewModel.Count--;
         if (RowDefs.TryGetValue(row, out var rowDef))
         {
             PART_RootGrid.RowDefinitions.Remove(rowDef);

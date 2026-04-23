@@ -36,6 +36,32 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     public event Action<RowViewModel, string> RenameItemAction;
     public event Action<string> RenameItemErrorAction;
 
+    public void UpdateCount()
+    {
+        var count = 0;
+        foreach (var item in Rows)
+        {
+            count += UpdateCount(item);
+        }
+
+        Count = count;
+    }
+
+    private int UpdateCount(RowViewModel row)
+    {
+        var count = 0;
+        if (row is RowViewModelList list)
+        {
+            count += list.Children.Count;
+            foreach (var child in list.Children)
+            {
+                count += UpdateCount(child);
+            }
+        }
+
+        return count;
+    }
+
     internal bool Rename(RowViewModel rowViewModel, string oldName, string newName)
     {
         if (IsExistsName(newName))
