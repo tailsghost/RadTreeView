@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Controls.Ribbon;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -339,6 +340,10 @@ public partial class RadTreeViewControl
     {
         if (row is RowViewModelList list)
         {
+            if (row.Parent == null) goto initial;
+            if (row.Parent is not { IsOpenChildren: true }) return;
+
+        initial:
             InitialRow(row);
             ElementsIndex.Add(row);
             foreach (var it in list.Children)
@@ -348,8 +353,42 @@ public partial class RadTreeViewControl
         }
         else
         {
+            if (row.Parent is not { IsOpenChildren: true }) return;
             ElementsIndex.Add(row);
             InitialRow(row);
+        }
+    }
+
+
+    private void InitialChildren(RowViewModel row)
+    {
+        if (row is RowViewModelList list)
+        {
+            if (!list.IsOpenChildren) return;
+            var indexParent = ElementsIndex.IndexOf(list);
+            if (indexParent == -1) throw new ArgumentOutOfRangeException("Такого элемента не существует!");
+            for (var i = 0; i < list.Children.Count; i++)
+            {
+                var child = list.Children[i];
+                if (Elements.TryGetValue(child, out var _)) continue;
+                ElementsIndex.Insert(indexParent + i + 1, child);
+                InitialRow(child);
+                if (child is not RowViewModelList { IsOpenChildren: true } childList) continue;
+                foreach (var it in childList.Children)
+                {
+                    InitialChildren(it);
+                }
+            }
+        }
+        else if (row is RowViewModelItem item)
+        {
+            if (item.Parent is not { IsOpenChildren: true } parentItem) return;
+            var indexParent = ElementsIndex.IndexOf(item);
+            if (indexParent == -1) throw new ArgumentOutOfRangeException("Такого элемента не существует!");
+            var indexArrayParent = parentItem.Children.IndexOf(item);
+            if (indexArrayParent == -1) throw new ArgumentOutOfRangeException("Такого элемента не существует!");
+            ElementsIndex.Insert(indexParent + indexArrayParent + 1, row);
+            InitialRow(item);
         }
     }
 
@@ -474,20 +513,10 @@ public partial class RadTreeViewControl
         if (e.PropertyName is nameof(ColumnViewModel.LastPoint))
         {
             var currentDef = ColumnsDef[columnViewModel];
-            var currentColumn = Columns[columnViewModel];
-
-            var lastColumnDef = ColumnsDef.Last();
-            var lastColumn = Columns.Last();
 
             var delta = columnViewModel.LastPoint.X - columnViewModel.StartPoint.X;
 
-            var indexOf = ColumnsDef
-                .ToList()
-                .IndexOf(new KeyValuePair<ColumnViewModel, ColumnDefinition>(columnViewModel, currentDef));
-
             var newValue = currentDef.Width.Value + delta;
-
-
 
             currentDef.Width = new GridLength(newValue > columnViewModel.MinColumnWidth ? newValue : columnViewModel.MinColumnWidth, GridUnitType.Pixel);
 
@@ -693,7 +722,7 @@ public partial class RadTreeViewControl
             OtherElements[row] = new List<FrameworkElement>(ViewModel.Columns.Count);
         }
 
-        Visibility visibility = Visibility.Collapsed;
+        var visibility = Visibility.Collapsed;
 
         if (row.Parent == null)
         {
@@ -783,11 +812,13 @@ public partial class RadTreeViewControl
         ResetSelected();
         if (Elements.TryGetValue(model, out var grid))
         {
+
             for (var i = 0; i < grid.Children.Count; i++)
             {
                 var child = grid.Children[i];
                 if (child is not Border { Name: "PART_newBorder", Child: Border borderChild } borderGrid) continue;
                 borderChild.BorderBrush = Brushes.Blue;
+                break;
             }
         }
         if (OtherElements.TryGetValue(model, out var list))
@@ -891,10 +922,9 @@ public partial class RadTreeViewControl
             Margin = new Thickness(row.RowOffset - RowViewModel.RowOffsetImmutable / 6, 0, -row.RowOffset + RowViewModel.RowOffsetImmutable / 6, 0),
             Width = 20 + rowOffset,
             BorderBrush = Brushes.LightGray,
-            BorderThickness = new Thickness(0, 0.5, 0, 0),
+            BorderThickness = new Thickness(0, 1, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Right,
-            IsHitTestVisible = false
         };
 
         var lineBorderDown = new Border
@@ -1026,6 +1056,10 @@ public partial class RadTreeViewControl
                     {
                         rowList.UpdateRowsPosition = true;
                         rowList.IsOpenChildren = !rowList.IsOpenChildren;
+                        if (rowList.IsOpenChildren)
+                        {
+                            InitialChildren(rowList);
+                        }
                         rowList.UpdateRowsPosition = false;
                     }
                 }
