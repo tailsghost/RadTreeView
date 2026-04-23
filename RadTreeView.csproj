@@ -9,4 +9,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BaseChromeWindow\BaseChromeWindow.csproj" />
+  </ItemGroup>
+
 </Project>

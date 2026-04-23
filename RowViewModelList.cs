@@ -7,8 +7,6 @@ namespace RadTreeView;
 
 public class RowViewModelList : RowViewModel
 {
-    private bool _openChildren = false;
-
     public bool IsFolder { get; set; }
     public ObservableCollection<RowViewModel> Children = [];
 
@@ -25,9 +23,15 @@ public class RowViewModelList : RowViewModel
 
     public bool IsOpenChildren
     {
-        get => _openChildren;
-        set => SetValue(ref _openChildren, value);
+        get => field;
+        set => SetValue(ref field, value);
     }
+
+    public bool IsMovingChildren
+    {
+        get => field;
+        set => SetValue(ref field, value);
+    } = false;
 
 
     public RowViewModelList AddChildrenList(RowHolder holder)

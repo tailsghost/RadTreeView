@@ -1,4 +1,5 @@
-﻿using RadTreeView.Commands;
+﻿using BaseChromeWindow;
+using RadTreeView.Commands;
 using RadTreeView.Interfaces;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,14 +9,209 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Controls.Ribbon;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace RadTreeView;
 
 public partial class RadTreeViewControl
 {
+    private WindowItem _window;
+    private bool _isDragging;
+    private Point _startMouse;
+    private Point _startWindow;
+    private Point _mouseOffset;
+    private RowViewModel? _lastHoveredItem;
+    private RowViewModel? _lastHoveredItemChanged;
+    private Dictionary<RowViewModel, Rect> _selections = [];
+    private List<RowViewModel> _originalOrder = [];
+    private Dictionary<RowViewModel, int> _originalRows = [];
+
+    private void IsDrag()
+    {
+        var mouse = Mouse.GetPosition(Application.Current.MainWindow);
+    }
+
+    private void StartDrag(RowViewModel item)
+    {
+        _window.DataContext = item;
+        _isDragging = true;
+        _lastHoveredItem = null;
+
+        var mouse = Mouse.GetPosition(Application.Current.MainWindow);
+
+        _startWindow = new Point(_window.Left, _window.Top);
+
+        _mouseOffset = new Point(
+            mouse.X - _window.Left,
+            mouse.Y - _window.Top
+        );
+
+        RebuildSelections(item);
+
+        _originalOrder = ElementsIndex.ToList();
+        _originalRows.Clear();
+
+        for (var i = 0; i < ElementsIndex.Count; i++)
+        {
+            var element = ElementsIndex[i];
+            _originalRows[element] = i + 1; 
+        }
+    }
+
+    private void UpdateDrag()
+    {
+        if (!_isDragging)
+            return;
+
+        var draggedItem = _window.DataContext as RowViewModel;
+        if (draggedItem == null)
+            return;
+
+        var mouse = Mouse.GetPosition(Application.Current.MainWindow);
+
+        _window.Left = mouse.X - _mouseOffset.X;
+        _window.Top = mouse.Y - _mouseOffset.Y;
+
+        var hovered = FindNearestSelection(mouse, draggedItem);
+
+        if (hovered == null)
+        {
+            _lastHoveredItem = null;
+            return;
+        }
+
+        if (_lastHoveredItem != null && ReferenceEquals(_lastHoveredItem, hovered))
+            return;
+
+        SwapRow(hovered, draggedItem);
+        Application.Current.MainWindow.UpdateLayout();
+        RebuildSelections(draggedItem);
+
+        _lastHoveredItem = hovered;
+        _lastHoveredItemChanged = hovered;
+    }
+
+    private void CancelSwap()
+    {
+        if(!_isDragging) return;
+
+        var draggedItem = _window.DataContext as RowViewModel;
+        if (draggedItem == null)
+            throw new Exception("Потерян контекст!");
+
+        if (ReferenceEquals(_lastHoveredItemChanged, draggedItem))
+            return;
+
+        var gridItem = Elements[draggedItem];
+        var mouse = Mouse.GetPosition(Application.Current.MainWindow);
+        var topLeft = gridItem.TranslatePoint(new Point(0, 0), Application.Current.MainWindow);
+        var rect = new Rect(
+            topLeft.X,
+            topLeft.Y,
+            gridItem.ActualWidth,
+            gridItem.ActualHeight
+        );
+
+        if (rect.Contains(mouse) && _lastHoveredItemChanged != null)
+        {
+            ViewModel.Swap(draggedItem, _lastHoveredItemChanged, _selections);
+
+            _originalOrder.Clear();
+            _originalRows.Clear();
+            _isDragging = false;
+            _lastHoveredItemChanged = null;
+            UpdateBorderThickness(draggedItem.Parent);
+            return;
+        }
+
+        ElementsIndex = _originalOrder.ToList();
+
+        for (var i = 0; i < ElementsIndex.Count; i++)
+        {
+            var item = ElementsIndex[i];
+
+            var grid = Elements[item];
+
+            Grid.SetRow(grid, i + 1);
+        }
+
+        _originalOrder.Clear();
+        _originalRows.Clear();
+        _isDragging = false;
+        UpdateBorderThickness(draggedItem.Parent);
+    }
+
+    private void SwapRow(RowViewModel swapped, RowViewModel draggedItem)
+    {
+        if (ReferenceEquals(draggedItem, swapped))
+            return;
+
+        var dragIndex = ElementsIndex.IndexOf(draggedItem);
+        if (dragIndex == -1)
+            throw new IndexOutOfRangeException("Неверный индекс");
+
+        var swappedIndex = ElementsIndex.IndexOf(swapped);
+        if (swappedIndex == -1)
+            throw new IndexOutOfRangeException("Неверный индекс");
+
+        if (dragIndex == swappedIndex)
+            return;
+
+        ElementsIndex[dragIndex] = swapped;
+        ElementsIndex[swappedIndex] = draggedItem;
+
+        var gridDrag = Elements[draggedItem];
+        var gridSwapped = Elements[swapped];
+
+        Grid.SetRow(gridDrag, swappedIndex + 1);
+        Grid.SetRow(gridSwapped, dragIndex + 1);
+    }
+
+    private RowViewModel? FindNearestSelection(Point mousePoint, RowViewModel draggedItem)
+    {
+        if (_selections == null || _selections.Count == 0)
+            return null;
+
+        foreach (var selection in _selections)
+        {
+            if (ReferenceEquals(selection.Key, draggedItem))
+                continue;
+
+            if (selection.Value.Contains(mousePoint))
+                return selection.Key;
+        }
+
+        return null;
+    }
+
+    private void RebuildSelections(RowViewModel draggedItem)
+    {
+        _selections.Clear();
+
+        if (draggedItem.Parent == null)
+            return;
+
+        foreach (var child in draggedItem.Parent.Children)
+        {
+            if (ReferenceEquals(child, draggedItem))
+                continue;
+
+            if (!Elements.TryGetValue(child, out var ui) || ui == null)
+                continue;
+
+            var topLeft = ui.TranslatePoint(new Point(0, 0), Application.Current.MainWindow);
+
+            _selections[child] = new Rect(
+                topLeft.X,
+                topLeft.Y,
+                ui.ActualWidth,
+                ui.ActualHeight);
+        }
+
+    }
+
     public RadTreeViewModel ViewModel { get; private set; }
 
     private readonly Dictionary<ColumnViewModel, ContentPresenter> Columns = [];
@@ -23,7 +219,7 @@ public partial class RadTreeViewControl
     private readonly Dictionary<ColumnViewModel, ColumnDefinition> ColumnsDef = [];
 
     private readonly Dictionary<RowViewModel, Grid> Elements = [];
-    private readonly List<RowViewModel> ElementsIndex = [];
+    private List<RowViewModel> ElementsIndex = [];
     private readonly Dictionary<RowViewModel, Border> VerticalLines = [];
     private readonly Dictionary<RowViewModel, Border> BorderButtons = [];
     private readonly Dictionary<RowViewModel, List<FrameworkElement>> OtherElements = [];
@@ -850,7 +1046,8 @@ public partial class RadTreeViewControl
             HorizontalAlignment = HorizontalAlignment.Stretch,
             IsHitTestVisible = true,
             Background = Brushes.Transparent,
-            DataContext = row
+            DataContext = row,
+            
         };
 
         if (row.Parent is RowViewModelList list)
@@ -1034,15 +1231,18 @@ public partial class RadTreeViewControl
 
     private void NewBorder_MouseMove(object sender, MouseEventArgs e)
     {
-        if (sender is not Border { Tag: RowViewModel row }) return;
-        MouseItemMove?.Invoke(sender, row, e);
+        if (sender is not Border { Tag: RowViewModel row } border) return;
+        var result = MouseItemMove?.Invoke(sender, row, e);
+
+        UpdateDrag();
     }
 
     private void Border_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not Border { Tag: RowViewModel row }) return;
+        if (sender is not Border { Tag: RowViewModel row } border) return;
         if (row is RowViewModel)
         {
+            border.ReleaseMouseCapture();
             SelectedElement?.Invoke(row);
             row.SelectedRow();
             NewBorder_MouseLeftButtonUp(sender, e);
@@ -1068,7 +1268,8 @@ public partial class RadTreeViewControl
 
     private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not Border { Tag: RowViewModel row }) return;
+        if (sender is not Border { Tag: RowViewModel row } border) return;
+        border.CaptureMouse();
         MouseLeftItemDown?.Invoke(sender, row, e);
     }
 
@@ -1096,7 +1297,66 @@ public partial class RadTreeViewControl
     private void Row_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not RowViewModel item) return;
-        if (e.PropertyName is nameof(RowViewModelList.IsOpenChildren))
+        if (e.PropertyName is nameof(RowViewModel.IsPlaceHolder))
+        {
+            var grid = Elements[item];
+
+            if (item.IsPlaceHolder)
+            {
+                if (_window != null) throw new Exception("Окно уже существует!");
+                grid.Background = Brushes.GreenYellow;
+                for (var i = 0; i < grid.Children.Count; i++)
+                {
+                    var child = grid.Children[i];
+                    if(child is not Border borderChild) continue;
+                    if (i == 1)
+                    {
+                        borderChild.Child.Visibility = Visibility.Hidden;
+                        continue;
+                    }
+
+                    borderChild.Visibility = Visibility.Hidden;
+                }
+
+                _window = new WindowItem()
+                {
+                    DataContext = item
+                };
+                var mouse = Mouse.GetPosition(Application.Current.MainWindow);
+                _window.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                _window.Arrange(new Rect(0, 0, _window.DesiredSize.Width, _window.DesiredSize.Height));
+
+                var width = _window.DesiredSize.Width;
+                var height = _window.DesiredSize.Height;
+                _window.Left = mouse.X - width / 2;
+                _window.Top = mouse.Y - height / 2;
+                _window.Show();
+                StartDrag(item);
+            }
+            else
+            {
+                if (_window == null) throw new Exception("Окно не существует!");
+                grid.Background = Brushes.Transparent;
+                for (var i = 0; i < grid.Children.Count; i++)
+                {
+                    var child = grid.Children[i];
+                    if (child is not Border borderChild) continue;
+                    if (i == 1)
+                    {
+                        borderChild.Child.Visibility = Visibility.Visible;
+                        continue;
+                    }
+
+                    borderChild.Visibility = Visibility.Visible;
+                }
+
+                CancelSwap();
+                _window.Dispose();
+                _isDragging = false;
+                _window = null;
+            }
+        }
+        else if (e.PropertyName is nameof(RowViewModelList.IsOpenChildren))
         {
             if (item is RowViewModelList rowlist)
             {
@@ -1108,8 +1368,6 @@ public partial class RadTreeViewControl
 
                 UpdateElements(rowlist);
             }
-
-
         }
         else if (e.PropertyName is nameof(RowViewModel.IsEnable))
         {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace RadTreeView;
 
@@ -36,6 +37,8 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
     public event Action<RowViewModel, string> RenameItemAction;
     public event Action<string> RenameItemErrorAction;
 
+    public event Action<RowViewModelList> Swapped;
+
     public void UpdateCount()
     {
         var count = 0;
@@ -45,6 +48,58 @@ public class RadTreeViewModel : BaseViewModel, IDisposable
         }
 
         Count = count;
+    }
+
+    public void Swap(RowViewModel drag, RowViewModel swapped, Dictionary<RowViewModel, Rect> selections)
+    {
+        var parent = drag.Parent;
+
+        var indexDrag = parent.Children.IndexOf(drag);
+        if (indexDrag == -1)
+            throw new ArgumentOutOfRangeException(nameof(drag));
+
+        var indexSwapped = parent.Children.IndexOf(swapped);
+        if (indexSwapped == -1)
+            throw new ArgumentOutOfRangeException(nameof(swapped));
+
+        if (indexDrag == indexSwapped)
+            return;
+
+        var ordered = selections
+            .OrderBy(x => x.Value.Top)
+            .Select(x => x.Key)
+            .ToList();
+
+        var targetIndex = ordered.IndexOf(swapped);
+        if (targetIndex == -1)
+            return;
+
+        var currentIndex = indexDrag;
+
+        if (currentIndex < targetIndex)
+        {
+            var temp = parent.Children[currentIndex];
+
+            for (var i = currentIndex; i < targetIndex; i++)
+            {
+                parent.Children[i] = parent.Children[i + 1];
+            }
+
+            parent.Children[targetIndex] = temp;
+        }
+        else
+        {
+            var temp = parent.Children[currentIndex];
+
+            for (var i = currentIndex; i > targetIndex; i--)
+            {
+                parent.Children[i] = parent.Children[i - 1];
+            }
+
+            parent.Children[targetIndex] = temp;
+        }
+
+        Swapped?.Invoke(parent);
     }
 
     private int UpdateCount(RowViewModel row)

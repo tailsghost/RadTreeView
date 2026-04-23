@@ -83,6 +83,12 @@ public abstract class RowViewModel : BaseViewModel, ITree
         }
     }
 
+    public bool IsPlaceHolder
+    {
+        get => field;
+        set => SetValue(ref field, value);
+    }
+
     public string Description
     {
         get => _description;
