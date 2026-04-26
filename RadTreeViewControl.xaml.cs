@@ -1278,6 +1278,10 @@ public partial class RadTreeViewControl
         if (sender is not FrameworkElement { Tag: RowViewModelList rowList }) return;
 
         rowList.IsOpenChildren = !rowList.IsOpenChildren;
+        if (rowList.IsOpenChildren)
+        {
+            InitialChildren(rowList);
+        }
     }
 
     private void UpdateElements(RowViewModelList rowlist)
