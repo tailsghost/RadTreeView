@@ -40,6 +40,12 @@ public abstract class RowViewModel : BaseViewModel, ITree
         set => SetValue(ref _isEnable, value);
     }
 
+    public bool IsActive
+    {
+        get => field;
+        set => SetValue(ref field, value);
+    } = false;
+
     private void UpdateIsEnable(RowViewModel row, bool value)
     {
         row.IsEnable = value;

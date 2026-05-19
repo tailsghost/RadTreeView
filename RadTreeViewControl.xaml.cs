@@ -1153,7 +1153,7 @@ public partial class RadTreeViewControl
 
             VerticalLines[row] = lineBorderDown;
 
-            if (rowIsList != null && rowIsList.Parent is RowViewModelList parent && parent.IsOpenChildren)
+            if (rowIsList is { Parent: RowViewModelList { IsOpenChildren: true } })
             {
                 lineBorderDown.Visibility = Visibility.Collapsed;
             }
